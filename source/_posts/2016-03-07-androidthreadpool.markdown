@@ -14,6 +14,8 @@ categories:
 
 2. 对线程进行管理控制，控制线程并发数量、定时执行、间隔执行等。
 
+<!-- more -->
+
 ## Java线程池模型的UML类图
 
 ![](/images/articles/threadpool.png)
