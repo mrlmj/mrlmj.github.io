@@ -1,0 +1,295 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>AndroidDev</title>
+  <meta name="author" content="monkey_liu">
+
+  
+  <meta name="description" content="之前看过几遍Android的事件分发流程，每次都以为看的差不多了，可过了一段时间印象又淡了，说到底还是知识掌握的不扎实，不够系统，只了解了皮毛。所以，本文对Android的事件分发机制进行系统总结，避免遗忘。结合android源码，参考《Android开发艺术探索》一书和相关博文。 ">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://www.monkeyliu.com/blog/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="AndroidDev" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/favicon.ico" rel="icon">
+<!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/blog">AndroidDev</a></h1>
+  
+    <h2>坚持比完美更重要</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="www.monkeyliu.com">
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/blog">博客</a></li>
+  <li><a href="/blog/archives">归档</a></li>
+  <li><a href="/blog/about.html">关于</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div class="blog-index">
+  
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2016/06/17/touchevent/">Android事件分发机制</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2016-06-17T11:31:09+08:00'><span class='date'><span class='date-month'>Jun</span> <span class='date-day'>17</span><span class='date-suffix'>th</span>, <span class='date-year'>2016</span></span> <span class='time'>11:31 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>之前看过几遍Android的事件分发流程，每次都以为看的差不多了，可过了一段时间印象又淡了，说到底还是知识掌握的不扎实，不够系统，只了解了皮毛。所以，本文对Android的事件分发机制进行系统总结，避免遗忘。结合android源码，参考《Android开发艺术探索》一书和相关博文。</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2016/06/17/touchevent/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2016/04/05/thinking/">我失意的人生该如何走下去</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2016-04-05T06:41:20+08:00'><span class='date'><span class='date-month'>Apr</span> <span class='date-day'>5</span><span class='date-suffix'>th</span>, <span class='date-year'>2016</span></span> <span class='time'>6:41 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>1、 摊牌第一天，早上不到5点钟就醒了，突然就醒了的那种感觉，伴随着一阵阵的心疼，难过。</p>
+
+<p>我决定起床，来公司写点什么，至少比躺在床上胡思乱想来的痛快，也好能够反省下我现在的状态，我到底是谁，我还可以做什么。</p>
+
+<p>2、 其实这一天的到来一点都不应该意外，已经一个多月的煎熬，持续下去迟早会把我们的关系继续恶化， 我能够清晰地感受到这种变化，这种距离感的增加，可怕。只是我没有勇气放弃，我也从来没有想放弃过，即使现实再怎么痛苦，我还是会相信一切会慢慢好起来，我们会回到当初的那种感觉，我是一个悲观的乐观主义者。</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2016/04/05/thinking/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2016/03/07/androidthreadpool/">线程池的使用总结</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2016-03-07T20:08:50+08:00'><span class='date'><span class='date-month'>Mar</span> <span class='date-day'>7</span><span class='date-suffix'>th</span>, <span class='date-year'>2016</span></span> <span class='time'>8:08 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>本博文是对Java线程池使用的一篇总结，系统记录下线程池的用法：</p>
+
+<h2>为什么使用线程池，线程池的好处是什么？</h2>
+
+<ol>
+<li><p>相比于每次都创建新的Thread，通过重用线程池中的线程，减少了创建线程和销毁线程带来的性能开销。</p></li>
+<li><p>对线程进行管理控制，控制线程并发数量、定时执行、间隔执行等。</p></li>
+</ol>
+
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2016/03/07/androidthreadpool/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2016/03/05/loseweight2016/">2016减肥大计</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2016-03-05T19:59:16+08:00'><span class='date'><span class='date-month'>Mar</span> <span class='date-day'>5</span><span class='date-suffix'>th</span>, <span class='date-year'>2016</span></span> <span class='time'>7:59 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h2>为什么要减肥?</h2>
+
+<ol>
+<li><p>知乎上“<a href="https://www.zhihu.com/question/28594126/answer/87730110">减肥成功真的能一定程度上改变人的相貌吗?</a>”的回答，让我相信，减肥很/非常/极其/特别/有可能让我变得更帅，更精神，更自信。</p></li>
+<li><p>减肥可以帮助我增强毅力，改掉不好的生活习惯，保持清醒的头脑，不至于年纪轻轻就放弃了正青春的信念，保持一个年轻的心态。</p></li>
+<li><p>更健康的身体，对妹子会更有吸引力。</p></li>
+</ol>
+
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2016/03/05/loseweight2016/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
+  
+  <div class="pagination">
+    
+    <a href="/blog/archives">Blog Archives</a>
+    
+  </div>
+</div>
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2016/06/17/touchevent/">Android事件分发机制</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2016/04/05/thinking/">我失意的人生该如何走下去</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2016/03/07/androidthreadpool/">线程池的使用总结</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2016/03/05/loseweight2016/">2016减肥大计</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2016 - monkey_liu -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
