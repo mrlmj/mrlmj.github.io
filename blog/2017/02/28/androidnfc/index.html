@@ -1,0 +1,1015 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Android NFC开发入门 - AndroidDev</title>
+  <meta name="author" content="monkey_liu">
+
+  
+  <meta name="description" content="NFC的几个概念 接触式IC卡 例如手机SIM卡、金融IC卡。
+非接触式IC卡 又称射频卡，将无线射频识别技术和IC卡结合起来，免接触。
+RFID 无线射频识别，一种无线通讯技术。 基本原理：阅读器将电信号转换为无线电信号（电磁波的一个频带）发给标签，标签使用接收到的无线电波能量供电， &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://www.monkeyliu.com/blog/2017/02/28/androidnfc/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="AndroidDev" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/favicon.ico" rel="icon">
+<!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/blog">AndroidDev</a></h1>
+  
+    <h2>坚持比完美更重要</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="www.monkeyliu.com">
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/blog">博客</a></li>
+  <li><a href="/blog/archives">归档</a></li>
+  <li><a href="/blog/about.html">关于</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Android NFC开发入门</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2017-02-28T13:08:50+08:00'><span class='date'><span class='date-month'>Feb</span> <span class='date-day'>28</span><span class='date-suffix'>th</span>, <span class='date-year'>2017</span></span> <span class='time'>1:08 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><h2>NFC的几个概念</h2>
+
+<ul>
+<li><p><strong>接触式IC卡</strong> 例如手机SIM卡、金融IC卡。</p></li>
+<li><p><strong>非接触式IC卡</strong> 又称射频卡，将无线射频识别技术和IC卡结合起来，免接触。</p></li>
+<li><p><strong>RFID</strong> 无线射频识别，一种无线通讯技术。</p>
+
+<p>基本原理：阅读器将电信号转换为无线电信号（电磁波的一个频带）发给标签，标签使用接收到的无线电波能量供电，然后将存储在自身数据以无线电信号的形式应答给阅读器，以读取到标签中的数据。</p></li>
+<li><p><strong>NFC</strong>（Near Field Communication） 短距离无线通讯技术，基于RFID，一般在10cm之内使用13.56MHz频率通讯</p></li>
+</ul>
+
+
+<!-- more -->
+
+
+<hr />
+
+<h2>Android如何使用NFC</h2>
+
+<h3>权限声明</h3>
+
+<p>在AndroidManifest.xml中如下申请NFC权限:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;uses-permission</span> <span class="na">android:name=</span><span class="s">&quot;android.permission.NFC&quot;</span> <span class="nt">/&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>添加下面一行，保证在GooglePlay商店此应用只显示给带NFC硬件的设备</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;uses-feature</span> <span class="na">android:name=</span><span class="s">&quot;android.hardware.nfc&quot;</span> <span class="na">android:required=</span><span class="s">&quot;true&quot;</span> <span class="nt">/&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>在代码中动态判断设备是否支持NFC：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="k">if</span><span class="o">(</span><span class="n">NfcAdapter</span><span class="o">.</span><span class="na">getDefaultAdapter</span><span class="o">()</span> <span class="o">==</span> <span class="kc">null</span><span class="o">){</span>
+</span><span class='line'>  <span class="n">Log</span><span class="o">.</span><span class="na">v</span><span class="o">(</span><span class="s">&quot;monkey&quot;</span><span class="o">,</span><span class="s">&quot;设备不支持NFC.&quot;</span><span class="o">);</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Android设备支持三种模式的NFC操作</h3>
+
+<ol>
+<li><strong>Reader/writer mode</strong> 通过Android设备对NFC标签进行读写数据操作。</li>
+<li><strong>P2P mode</strong> NFC设备之间交换数据，AndroidBeam使用这种模式。</li>
+<li><strong>Card emulation mode</strong> NFC设备模拟成NFC标签。</li>
+</ol>
+
+
+<h3>Reader/write mode</h3>
+
+<p>Android通过标签分发系统分析发现的NFC标签，封装成对应的Intent发给Android上层进行对应的处理。</p>
+
+<p>Android中关于NFC有三种类型的Action（优先级由高到低）：</p>
+
+<p><code>ACTION_NDEF_DISCOVERED</code> <code>ACTION_TECH_DISCOVERED</code> <code>ACTION_TAG_DISCOVERED</code></p>
+
+<h4>这里的<em>优先级</em>可以通过标签分发系统的机制来解释:</h4>
+
+<ol>
+<li>如果一个包含<strong>NDEF</strong>格式数据的NFC标签被发现，Android优先发送带<code>ACTION_NDEF_DISCOVERED</code>action的Intent。</li>
+<li>如果没有Activity处理<code>ACTION_NDEF_DISCOVERED</code>类型的intent <em>或者</em> NFC标签不包含<strong>NDEF</strong>格式的数据（使用了其他已知技术）<em>或者</em> <strong>NDEF</strong>格式的标签不能被标签分发系统映射成正确的Intent，则会发送优先级较低的<code>ACTION_TECH_DISCOVERED</code>intent来尝试启动Activity（不会发送<code>ACTION_NDEF_DISCOVERED</code>）。</li>
+<li>如果仍然没有Activity响应上述两个Action，则系统会发送优先级最低的<code>ACTION_TAG_DISCOVERED</code>的Intent。</li>
+</ol>
+
+
+<p>图为标签分发系统：</p>
+
+<p><img src="/images/articles/nfc_tag_dispatch.png" alt="nfc_tag_dispatch" /></p>
+
+<h4>NFC数据格式</h4>
+
+<p>NFC的数据格式可以分为NDEF和非NDEF两种。<strong>NDEF</strong>是NFC Forum定义的一种标准格式，在Android中得到最大范围的支持，是Android最推荐使用的格式。</p>
+
+<ul>
+<li><p><strong>NDEF数据</strong>在AndroidSDK中被封装成一个包含多个<strong>NdefRecord</strong>的<strong>NdefMessage</strong>，<strong>android.nfc.tech.Ndef</strong>类封装了各种便捷的读写数据的操作。</p>
+
+<p>前面说过当Android设备发现NDEF格式的标签之后会发出<code>ACTION_NDEF_DISCOVERED</code>类型的Intent。通常在intent中还会带上更加具体的mime type &amp; URI等数据，以便筛选更加具体的Activity来进行处理（这个是Android推荐使用这个格式的原因之一）。下面就来说说，NDEF具体的数据格式以及Android如何分析NDEF数据来生成对应的Intent。</p>
+
+<p><strong>NDEF数据格式</strong>：</p>
+
+<p><img src="/images/articles/ndef_protocol.png" alt="ndef_protocol" /></p>
+
+<ol>
+<li><strong>TNF</strong> 3bits的字段，标识了如何解析第二个字段type。包含的值见表一：</li>
+</ol>
+
+
+<p>表一，TNF字段以及映射：</p>
+
+<table>
+<thead>
+<tr>
+<th style="text-align:left;"> TNF               </th>
+<th> 映射的Intent                                </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;"> TNF_ABSOLUTE_URI  </td>
+<td> 基于<em>type</em>的URI                             </td>
+</tr>
+<tr>
+<td style="text-align:left;"> TNF_EMPTY         </td>
+<td> 无映射，降级到<code>ACTION_TECH_DISCOVERED</code>          </td>
+</tr>
+<tr>
+<td style="text-align:left;"> TNF_EXTERNAL_TYPE </td>
+<td> 基于<em>type</em>的URI. type形式为 <domain>:<service>。映射后的URI形式为： <code>vnd.android.nfc://ext/&lt;domain&gt;:&lt;service&gt;</code>. </td>
+</tr>
+<tr>
+<td style="text-align:left;"> TNF_MIME_MEDIA    </td>
+<td> 基于type的MIME类型                            </td>
+</tr>
+<tr>
+<td style="text-align:left;"> TNF_UNCHANGED     </td>
+<td> 无效，降级为<code>ACTION_TECH_DISCOVERED</code>           </td>
+</tr>
+<tr>
+<td style="text-align:left;"> TNF_UNKNOWN       </td>
+<td> 降级为<code>ACTION_TECH_DISCOVERED</code>              </td>
+</tr>
+<tr>
+<td style="text-align:left;"> TNF_WELL_KNOWN    </td>
+<td> 基于type（RTD)的MIME type or URI ，需要再根据type的值进行映射（见表二） </td>
+</tr>
+</tbody>
+</table>
+
+
+<p>表二，RTDs for TNF_WELL_KNOWN以及映射：</p>
+
+<table>
+<thead>
+<tr>
+<th> RTD                     </th>
+<th> 映射的Intent                   </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td> RTD_ALTERNATIVE_CARRIER </td>
+<td> 降级为<code>ACTION_TECH_DISCOVERED</code> </td>
+</tr>
+<tr>
+<td> RTD_HANDOVER_CARRIER    </td>
+<td> 降级为<code>ACTION_TECH_DISCOVERED</code> </td>
+</tr>
+<tr>
+<td> RTD_HANDOVER_REQUEST    </td>
+<td> 降级为<code>ACTION_TECH_DISCOVERED</code> </td>
+</tr>
+<tr>
+<td> RTD_HANDOVER_SELECT     </td>
+<td> 降级为<code>ACTION_TECH_DISCOVERED</code> </td>
+</tr>
+<tr>
+<td> RTD_SMART_POSTER        </td>
+<td> 基于解析payload的URI             </td>
+</tr>
+<tr>
+<td> RTD_TEXT                </td>
+<td> MIME类型 text/p               </td>
+</tr>
+<tr>
+<td> RTD_URI                 </td>
+<td> 基于payloadd的URI              </td>
+</tr>
+</tbody>
+</table>
+
+
+<ol>
+<li><strong>type</strong>,描述Record的类型，如果TNF为TNF_WELL_KNOWN，则这个字段指定RTD，见上表二。</li>
+<li><strong>ID</strong>，字段的唯一标识，一般不常用，可以用来标识一张标签。</li>
+<li><strong>payload</strong>，有效荷载，保存真实的数据。</li>
+</ol>
+
+
+<p>​</p>
+
+<p><strong>创建各种类型的NDEF数据&amp;响应对应NDEF 数据的IntentFilter实例</strong></p>
+
+<p>​1. 创建TNF_ABSOLUTE_URI类型数据:</p></li>
+</ul>
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">NdefRecord</span> <span class="n">uriRecord</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">NdefRecord</span><span class="o">(</span>
+</span><span class='line'><span class="n">NdefRecord</span><span class="o">.</span><span class="na">TNF_ABSOLUTE_URI</span> <span class="o">,</span>
+</span><span class='line'><span class="s">&quot;http://developer.android.com/index.html&quot;</span><span class="o">.</span><span class="na">getBytes</span><span class="o">(</span><span class="n">Charset</span><span class="o">.</span><span class="na">forName</span><span class="o">(</span><span class="s">&quot;US-ASCII&quot;</span><span class="o">)),</span>
+</span><span class='line'><span class="k">new</span> <span class="kt">byte</span><span class="o">[</span><span class="mi">0</span><span class="o">],</span> <span class="k">new</span> <span class="kt">byte</span><span class="o">[</span><span class="mi">0</span><span class="o">]);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>​ 响应的intent filter：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;intent-filter&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;action</span> <span class="na">android:name=</span><span class="s">&quot;android.nfc.action.NDEF_DISCOVERED&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;category</span> <span class="na">android:name=</span><span class="s">&quot;android.intent.category.DEFAULT&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;data</span> <span class="na">android:scheme=</span><span class="s">&quot;http&quot;</span>
+</span><span class='line'>        <span class="na">android:host=</span><span class="s">&quot;developer.android.com&quot;</span>
+</span><span class='line'>        <span class="na">android:pathPrefix=</span><span class="s">&quot;/index.html&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'><span class="nt">&lt;/intent-filter&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>​ 2. 创建TNF_MIME_MEDIA类型的数据：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'>  <span class="n">NdefRecord</span> <span class="n">mimeRecord</span> <span class="o">=</span> <span class="n">NdefRecord</span><span class="o">.</span><span class="na">createMime</span><span class="o">(</span><span class="s">&quot;application/vnd.com.example.android.beam&quot;</span><span class="o">,</span>
+</span><span class='line'>      <span class="s">&quot;Beam me up, Android&quot;</span><span class="o">.</span><span class="na">getBytes</span><span class="o">(</span><span class="n">Charset</span><span class="o">.</span><span class="na">forName</span><span class="o">(</span><span class="s">&quot;US-ASCII&quot;</span><span class="o">)));</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<pre><code>对应的intent filter:
+</code></pre>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'>  <span class="nt">&lt;intent-filter&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;action</span> <span class="na">android:name=</span><span class="s">&quot;android.nfc.action.NDEF_DISCOVERED&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;category</span> <span class="na">android:name=</span><span class="s">&quot;android.intent.category.DEFAULT&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;data</span> <span class="na">android:mimeType=</span><span class="s">&quot;application/vnd.com.example.android.beam&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;/intent-filter&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>​ 3. 创建TNF_EXTERNAL_TYPE类型的数据:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'>  <span class="kt">byte</span><span class="o">[]</span> <span class="n">payload</span><span class="o">;</span> <span class="c1">//assign to your data</span>
+</span><span class='line'>  <span class="n">String</span> <span class="n">domain</span> <span class="o">=</span> <span class="s">&quot;com.example&quot;</span><span class="o">;</span> <span class="c1">//usually your app&#39;s package name</span>
+</span><span class='line'>  <span class="n">String</span> <span class="n">type</span> <span class="o">=</span> <span class="s">&quot;externalType&quot;</span><span class="o">;</span>
+</span><span class='line'>  <span class="n">NdefRecord</span> <span class="n">extRecord</span> <span class="o">=</span> <span class="n">NdefRecord</span><span class="o">.</span><span class="na">createExternal</span><span class="o">(</span><span class="n">domain</span><span class="o">,</span> <span class="n">type</span><span class="o">,</span> <span class="n">payload</span><span class="o">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<pre><code>对应的intent filter:
+</code></pre>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'>  <span class="nt">&lt;intent-filter&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;action</span> <span class="na">android:name=</span><span class="s">&quot;android.nfc.action.NDEF_DISCOVERED&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;category</span> <span class="na">android:name=</span><span class="s">&quot;android.intent.category.DEFAULT&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;data</span> <span class="na">android:scheme=</span><span class="s">&quot;vnd.android.nfc&quot;</span>
+</span><span class='line'>          <span class="na">android:host=</span><span class="s">&quot;ext&quot;</span>
+</span><span class='line'>          <span class="na">android:pathPrefix=</span><span class="s">&quot;/com.example:externalType&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;/intent-filter&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>​ 4. 创建TNF_WELL_KNOWN with RTD_TEXT类型的数据：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="n">NdefRecord</span> <span class="nf">createTextRecord</span><span class="o">(</span><span class="n">String</span> <span class="n">payload</span><span class="o">,</span> <span class="n">Locale</span> <span class="n">locale</span><span class="o">,</span> <span class="kt">boolean</span> <span class="n">encodeInUtf8</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>    <span class="kt">byte</span><span class="o">[]</span> <span class="n">langBytes</span> <span class="o">=</span> <span class="n">locale</span><span class="o">.</span><span class="na">getLanguage</span><span class="o">().</span><span class="na">getBytes</span><span class="o">(</span><span class="n">Charset</span><span class="o">.</span><span class="na">forName</span><span class="o">(</span><span class="s">&quot;US-ASCII&quot;</span><span class="o">));</span>
+</span><span class='line'>    <span class="n">Charset</span> <span class="n">utfEncoding</span> <span class="o">=</span> <span class="n">encodeInUtf8</span> <span class="o">?</span> <span class="n">Charset</span><span class="o">.</span><span class="na">forName</span><span class="o">(</span><span class="s">&quot;UTF-8&quot;</span><span class="o">)</span> <span class="o">:</span> <span class="n">Charset</span><span class="o">.</span><span class="na">forName</span><span class="o">(</span><span class="s">&quot;UTF-16&quot;</span><span class="o">);</span>
+</span><span class='line'>    <span class="kt">byte</span><span class="o">[]</span> <span class="n">textBytes</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="na">getBytes</span><span class="o">(</span><span class="n">utfEncoding</span><span class="o">);</span>
+</span><span class='line'>    <span class="kt">int</span> <span class="n">utfBit</span> <span class="o">=</span> <span class="n">encodeInUtf8</span> <span class="o">?</span> <span class="mi">0</span> <span class="o">:</span> <span class="o">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">7</span><span class="o">);</span>
+</span><span class='line'>    <span class="kt">char</span> <span class="n">status</span> <span class="o">=</span> <span class="o">(</span><span class="kt">char</span><span class="o">)</span> <span class="o">(</span><span class="n">utfBit</span> <span class="o">+</span> <span class="n">langBytes</span><span class="o">.</span><span class="na">length</span><span class="o">);</span>
+</span><span class='line'>    <span class="kt">byte</span><span class="o">[]</span> <span class="n">data</span> <span class="o">=</span> <span class="k">new</span> <span class="kt">byte</span><span class="o">[</span><span class="mi">1</span> <span class="o">+</span> <span class="n">langBytes</span><span class="o">.</span><span class="na">length</span> <span class="o">+</span> <span class="n">textBytes</span><span class="o">.</span><span class="na">length</span><span class="o">];</span>
+</span><span class='line'>    <span class="n">data</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span> <span class="o">=</span> <span class="o">(</span><span class="kt">byte</span><span class="o">)</span> <span class="n">status</span><span class="o">;</span>
+</span><span class='line'>    <span class="n">System</span><span class="o">.</span><span class="na">arraycopy</span><span class="o">(</span><span class="n">langBytes</span><span class="o">,</span> <span class="mi">0</span><span class="o">,</span> <span class="n">data</span><span class="o">,</span> <span class="mi">1</span><span class="o">,</span> <span class="n">langBytes</span><span class="o">.</span><span class="na">length</span><span class="o">);</span>
+</span><span class='line'>    <span class="n">System</span><span class="o">.</span><span class="na">arraycopy</span><span class="o">(</span><span class="n">textBytes</span><span class="o">,</span> <span class="mi">0</span><span class="o">,</span> <span class="n">data</span><span class="o">,</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">langBytes</span><span class="o">.</span><span class="na">length</span><span class="o">,</span> <span class="n">textBytes</span><span class="o">.</span><span class="na">length</span><span class="o">);</span>
+</span><span class='line'>    <span class="n">NdefRecord</span> <span class="n">record</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">NdefRecord</span><span class="o">(</span><span class="n">NdefRecord</span><span class="o">.</span><span class="na">TNF_WELL_KNOWN</span><span class="o">,</span>
+</span><span class='line'>    <span class="n">NdefRecord</span><span class="o">.</span><span class="na">RTD_TEXT</span><span class="o">,</span> <span class="k">new</span> <span class="kt">byte</span><span class="o">[</span><span class="mi">0</span><span class="o">],</span> <span class="n">data</span><span class="o">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">record</span><span class="o">;</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>​ 对应的Intent filter:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;intent-filter&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;action</span> <span class="na">android:name=</span><span class="s">&quot;android.nfc.action.NDEF_DISCOVERED&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;category</span> <span class="na">android:name=</span><span class="s">&quot;android.intent.category.DEFAULT&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;data</span> <span class="na">android:mimeType=</span><span class="s">&quot;text/plain&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'><span class="nt">&lt;/intent-filter&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>​</p>
+
+<p>​ <strong>读写NDEF格式的NFC数据</strong>：</p>
+
+<p>​ 1. Intent中包含三个相关的数据：</p>
+
+<p>​ <strong>EXTRA_TAG</strong> 扫描到的标签对象</p>
+
+<p>​ <strong>EXTRA_NDEF_MESSAGES</strong> 从标签中获取到的NDEF数据对象，只有ACTION_NDEF_DISCOVERED类型的                Intent包含</p>
+
+<p>​ <strong>EXTRA_ID</strong> 标签的ID（可选）</p>
+
+<p>​ 2 .解析NDEF数据的代码一般为：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="nd">@Override</span>
+</span><span class='line'><span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onNewIntent</span><span class="o">(</span><span class="n">Intent</span> <span class="n">intent</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>    <span class="kd">super</span><span class="o">.</span><span class="na">onNewIntent</span><span class="o">(</span><span class="n">intent</span><span class="o">);</span>
+</span><span class='line'>    <span class="o">...</span>
+</span><span class='line'>    <span class="k">if</span> <span class="o">(</span><span class="n">intent</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">NfcAdapter</span><span class="o">.</span><span class="na">ACTION_NDEF_DISCOVERED</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">intent</span><span class="o">.</span><span class="na">getAction</span><span class="o">()))</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">Parcelable</span><span class="o">[]</span> <span class="n">rawMessages</span> <span class="o">=</span>
+</span><span class='line'>            <span class="n">intent</span><span class="o">.</span><span class="na">getParcelableArrayExtra</span><span class="o">(</span><span class="n">NfcAdapter</span><span class="o">.</span><span class="na">EXTRA_NDEF_MESSAGES</span><span class="o">);</span>
+</span><span class='line'>        <span class="k">if</span> <span class="o">(</span><span class="n">rawMessages</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="n">NdefMessage</span><span class="o">[]</span> <span class="n">messages</span> <span class="o">=</span> <span class="k">new</span> <span class="n">NdefMessage</span><span class="o">[</span><span class="n">rawMessages</span><span class="o">.</span><span class="na">length</span><span class="o">];</span>
+</span><span class='line'>            <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">rawMessages</span><span class="o">.</span><span class="na">length</span><span class="o">;</span> <span class="n">i</span><span class="o">++)</span> <span class="o">{</span>
+</span><span class='line'>                <span class="n">messages</span><span class="o">[</span><span class="n">i</span><span class="o">]</span> <span class="o">=</span> <span class="o">(</span><span class="n">NdefMessage</span><span class="o">)</span> <span class="n">rawMessages</span><span class="o">[</span><span class="n">i</span><span class="o">];</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>            <span class="c1">// Process the messages array.</span>
+</span><span class='line'>            <span class="o">...</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>​ 写NDEF数据的代码一般为：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'> <span class="nd">@Override</span>
+</span><span class='line'>    <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onNewIntent</span><span class="o">(</span><span class="n">Intent</span> <span class="n">intent</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="kd">super</span><span class="o">.</span><span class="na">onNewIntent</span><span class="o">(</span><span class="n">intent</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">Tag</span> <span class="n">tag</span> <span class="o">=</span> <span class="n">intent</span><span class="o">.</span><span class="na">getParcelableExtra</span><span class="o">(</span><span class="n">NfcAdapter</span><span class="o">.</span><span class="na">EXTRA_TAG</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">NdefRecord</span> <span class="n">ndefRecord</span> <span class="o">=</span> <span class="n">NdefRecord</span><span class="o">.</span><span class="na">createExternal</span><span class="o">(</span><span class="s">&quot;domain&quot;</span><span class="o">,</span> <span class="s">&quot;service&quot;</span><span class="o">,</span> <span class="s">&quot;content&quot;</span><span class="o">.</span><span class="na">getBytes</span><span class="o">());</span>
+</span><span class='line'>        <span class="n">NdefMessage</span> <span class="n">ndefMessage</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">NdefMessage</span><span class="o">(</span><span class="k">new</span> <span class="n">NdefRecord</span><span class="o">[]</span> <span class="o">{</span><span class="n">ndefRecord</span><span class="o">});</span>
+</span><span class='line'>        <span class="n">Ndef</span> <span class="n">ndef</span> <span class="o">=</span> <span class="n">Ndef</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">tag</span><span class="o">);</span> <span class="c1">//获取Ndef tech的对象</span>
+</span><span class='line'>        <span class="k">if</span> <span class="o">(</span><span class="n">ndef</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span> <span class="c1">//非NDEF数据</span>
+</span><span class='line'>            <span class="k">try</span> <span class="o">{</span>
+</span><span class='line'>                <span class="n">ndef</span><span class="o">.</span><span class="na">connect</span><span class="o">();</span>
+</span><span class='line'>                <span class="n">ndef</span><span class="o">.</span><span class="na">writeNdefMessage</span><span class="o">(</span><span class="n">ndefMessage</span><span class="o">);</span>
+</span><span class='line'>            <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">IOException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+</span><span class='line'>            <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">FormatException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>        <span class="o">}</span> <span class="k">else</span> <span class="o">{</span> <span class="c1">//可格式化为NDEF数据</span>
+</span><span class='line'>            <span class="n">NdefFormatable</span> <span class="n">ndefFormatable</span> <span class="o">=</span> <span class="n">NdefFormatable</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">tag</span><span class="o">);</span>
+</span><span class='line'>            <span class="k">if</span> <span class="o">(</span><span class="n">ndefFormatable</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                <span class="k">try</span> <span class="o">{</span>
+</span><span class='line'>                    <span class="n">ndefFormatable</span><span class="o">.</span><span class="na">connect</span><span class="o">();</span>
+</span><span class='line'>                    <span class="n">ndefFormatable</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="n">ndefMessage</span><span class="o">);</span>
+</span><span class='line'>                <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">IOException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                    <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+</span><span class='line'>                <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">FormatException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                    <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+</span><span class='line'>                <span class="o">}</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>    <span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>​</p>
+
+<ul>
+<li><p><strong>非NDEF数据</strong>可以配合<strong>android.nfc.tech</strong>包下的对应的类来进行使用。</p>
+
+<p>每个NFC标签可能支持不同种类的<strong>technologies</strong>(不同格式数据的读写），可以通过如下代码获取标签支持的<strong>techonologies</strong>:</p></li>
+</ul>
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'>  <span class="n">mTag</span> <span class="o">=</span> <span class="n">getIntent</span><span class="o">().</span><span class="na">getParcelableExtra</span><span class="o">(</span><span class="n">NfcAdapter</span><span class="o">.</span><span class="na">EXTRA_TAG</span><span class="o">);</span>
+</span><span class='line'>  <span class="n">String</span><span class="o">[]</span> <span class="n">teches</span> <span class="o">=</span> <span class="n">mTag</span><span class="o">.</span><span class="na">getTechList</span><span class="o">();</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>  Android支持的常见Technology如下表：</p>
+
+<table>
+<thead>
+<tr>
+<th> Class            </th>
+<th> Description                              </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td> <code>TagTechnology</code>  </td>
+<td> The interface that all tag technology classes must implement. </td>
+</tr>
+<tr>
+<td> <code>NfcA</code>           </td>
+<td> Provides access to NFC-A (ISO 14443-3A) properties and I/O operations. </td>
+</tr>
+<tr>
+<td> <code>NfcB</code>           </td>
+<td> Provides access to NFC-B (ISO 14443-3B) properties and I/O operations. </td>
+</tr>
+<tr>
+<td> <code>NfcF</code>           </td>
+<td> Provides access to NFC-F (JIS 6319-4) properties and I/O operations. </td>
+</tr>
+<tr>
+<td> <code>NfcV</code>           </td>
+<td> Provides access to NFC-V (ISO 15693) properties and I/O operations. </td>
+</tr>
+<tr>
+<td> <code>IsoDep</code>         </td>
+<td> Provides access to ISO-DEP (ISO 14443-4) properties and I/O operations. </td>
+</tr>
+<tr>
+<td> <code>Ndef</code>           </td>
+<td> Provides access to NDEF data and operations on NFC tags that have been formatted as NDEF. </td>
+</tr>
+<tr>
+<td> <code>NdefFormatable</code> </td>
+<td> Provides a format operations for tags that may be NDEF formattable. </td>
+</tr>
+</tbody>
+</table>
+
+
+<p>Android设备可选支持的Technology：</p>
+
+<table>
+<thead>
+<tr>
+<th> Class              </th>
+<th> Description                              </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td> <code>MifareClassic</code>    </td>
+<td> Provides access to MIFARE Classic properties and I/O operations, if this Android device supports MIFARE. </td>
+</tr>
+<tr>
+<td> <code>MifareUltralight</code> </td>
+<td> Provides access to MIFARE Ultralight properties and I/O operations, if this Android device supports MIFARE. </td>
+</tr>
+</tbody>
+</table>
+
+
+<p>前面讲解过，标签在某些情况下会降级为<code>ACTION_TECH_DISCOVERED</code>类型的Intent，对应的xml文件为:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;activity&gt;</span>
+</span><span class='line'>...
+</span><span class='line'><span class="nt">&lt;intent-filter&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;action</span> <span class="na">android:name=</span><span class="s">&quot;android.nfc.action.TECH_DISCOVERED&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'><span class="nt">&lt;/intent-filter&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="nt">&lt;meta-data</span> <span class="na">android:name=</span><span class="s">&quot;android.nfc.action.TECH_DISCOVERED&quot;</span>
+</span><span class='line'>    <span class="na">android:resource=</span><span class="s">&quot;@xml/nfc_tech_filter&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>...
+</span><span class='line'><span class="nt">&lt;/activity&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>其中<strong>android:resource=&ldquo;@xml/nfc_tech_filter&rdquo;</strong>指定NFC technology的过滤文件，放在<code>res/xml</code>目录下任意命名。其中指定的technologies必须是所识别的标签支持的technologies的子集，才能匹配到。例如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;resources</span> <span class="na">xmlns:xliff=</span><span class="s">&quot;urn:oasis:names:tc:xliff:document:1.2&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;tech-list&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;tech&gt;</span>android.nfc.tech.IsoDep<span class="nt">&lt;/tech&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;tech&gt;</span>android.nfc.tech.NfcA<span class="nt">&lt;/tech&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;tech&gt;</span>android.nfc.tech.NfcB<span class="nt">&lt;/tech&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;tech&gt;</span>android.nfc.tech.NfcF<span class="nt">&lt;/tech&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;tech&gt;</span>android.nfc.tech.NfcV<span class="nt">&lt;/tech&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;tech&gt;</span>android.nfc.tech.Ndef<span class="nt">&lt;/tech&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;tech&gt;</span>android.nfc.tech.NdefFormatable<span class="nt">&lt;/tech&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;tech&gt;</span>android.nfc.tech.MifareClassic<span class="nt">&lt;/tech&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;tech&gt;</span>android.nfc.tech.MifareUltralight<span class="nt">&lt;/tech&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;/tech-list&gt;</span>
+</span><span class='line'><span class="nt">&lt;/resources&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>或者分开多个<strong><tech-list></strong>,他们之间相互独立，匹配一个就好。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;resources</span> <span class="na">xmlns:xliff=</span><span class="s">&quot;urn:oasis:names:tc:xliff:document:1.2&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;tech-list&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;tech&gt;</span>android.nfc.tech.NfcA<span class="nt">&lt;/tech&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;tech&gt;</span>android.nfc.tech.Ndef<span class="nt">&lt;/tech&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;/tech-list&gt;</span>
+</span><span class='line'><span class="nt">&lt;/resources&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="nt">&lt;resources</span> <span class="na">xmlns:xliff=</span><span class="s">&quot;urn:oasis:names:tc:xliff:document:1.2&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;tech-list&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;tech&gt;</span>android.nfc.tech.NfcB<span class="nt">&lt;/tech&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;tech&gt;</span>android.nfc.tech.Ndef<span class="nt">&lt;/tech&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;/tech-list&gt;</span>
+</span><span class='line'><span class="nt">&lt;/resources&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><strong>各种类型的非NDEF数据格式的读写</strong></p>
+
+<p>查看对应的规格书按照协议来使用，在developer.android.com中可以简单地查看一种数据格式的说明：如 <a href="https://developer.android.com/reference/android/nfc/tech/MifareClassic.html">MIFAREClassic</a></p>
+
+<h3>P2P mode</h3>
+
+<p>即AndroidBeam功能，使两台Android设备进行快速的数据交换。发送数据的设备打开发送数据的应用（相当于一张标签），接受数据的设备解锁靠近发送数据的设备之后，发送数据的设备UI显示“Touch to Beam",点击即可将数据发送给接收端（接收端设备接受到数据通过标签分发系统决定打开的应用进行处理）。</p>
+
+<p>相关的API有两个：</p>
+
+<p><strong>NfcAdapter.setNdefPushMessage()</strong> :发送端设置要发送的NDEF数据。两台设备靠近之后点击”Touch to Beam"发送此数据。</p>
+
+<p><strong>NfcAdapter.setNdefPushMessageCallback()</strong>:此方法接受一个<strong>NfcAdapter.CreateNdefMessageCallback</strong>类型的回调接口，此接口在两台设备靠近时回调进行NDEF数据的创建，然后点击“Touch to Beam"发送数据。</p>
+
+<p>两个接口的唯一不同在于：接口1一开始便确定了要发送的数据；接口2在两个设备靠近时才创建要发送的NDEF数据。</p>
+
+<p><em>代码示例</em>(Demo中onCreate中为发送端逻辑，onResume中为接收端处理逻辑):</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">MainActivity</span> <span class="kd">extends</span> <span class="n">AppCompatActivity</span> <span class="o">{</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">private</span> <span class="n">NfcAdapter</span> <span class="n">mNfcAdapter</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@Override</span>
+</span><span class='line'>    <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onCreate</span><span class="o">(</span><span class="n">Bundle</span> <span class="n">savedInstanceState</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="kd">super</span><span class="o">.</span><span class="na">onCreate</span><span class="o">(</span><span class="n">savedInstanceState</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">setContentView</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">layout</span><span class="o">.</span><span class="na">activity_main</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">mNfcAdapter</span> <span class="o">=</span> <span class="n">NfcAdapter</span><span class="o">.</span><span class="na">getDefaultAdapter</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
+</span><span class='line'>        <span class="k">if</span> <span class="o">(</span><span class="n">mNfcAdapter</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="n">Toast</span><span class="o">.</span><span class="na">makeText</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="s">&quot;not support nfc&quot;</span><span class="o">,</span> <span class="n">Toast</span><span class="o">.</span><span class="na">LENGTH_SHORT</span><span class="o">).</span><span class="na">show</span><span class="o">();</span>
+</span><span class='line'>            <span class="n">finish</span><span class="o">();</span>
+</span><span class='line'>            <span class="k">return</span><span class="o">;</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="kd">final</span> <span class="n">NdefRecord</span> <span class="n">ndefRecord</span> <span class="o">=</span>         <span class="n">NdefRecord</span><span class="o">.</span><span class="na">createMime</span><span class="o">(</span><span class="s">&quot;application/vnd.com.example.android.beam&quot;</span><span class="o">,</span> <span class="s">&quot;hello android&quot;</span><span class="o">.</span><span class="na">getBytes</span><span class="o">());</span>
+</span><span class='line'>        <span class="n">mNfcAdapter</span><span class="o">.</span><span class="na">setNdefPushMessageCallback</span><span class="o">(</span><span class="k">new</span> <span class="n">NfcAdapter</span><span class="o">.</span><span class="na">CreateNdefMessageCallback</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>            <span class="nd">@Override</span>
+</span><span class='line'>            <span class="kd">public</span> <span class="n">NdefMessage</span> <span class="nf">createNdefMessage</span><span class="o">(</span><span class="n">NfcEvent</span> <span class="n">nfcEvent</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                <span class="n">Log</span><span class="o">.</span><span class="na">v</span><span class="o">(</span><span class="s">&quot;seewo&quot;</span><span class="o">,</span> <span class="s">&quot;createNdefMessage&quot;</span><span class="o">);</span>
+</span><span class='line'>                <span class="k">return</span> <span class="k">new</span> <span class="nf">NdefMessage</span><span class="o">(</span><span class="n">ndefRecord</span><span class="o">);</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>        <span class="o">},</span> <span class="k">this</span><span class="o">);</span>
+</span><span class='line'><span class="c1">//        mNfcAdapter.setNdefPushMessage(new NdefMessage(ndefRecord), this); //接口一的实现</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@Override</span>
+</span><span class='line'>    <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onResume</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>        <span class="kd">super</span><span class="o">.</span><span class="na">onResume</span><span class="o">();</span>
+</span><span class='line'>        <span class="c1">//接收端的处理逻辑</span>
+</span><span class='line'>        <span class="k">if</span> <span class="o">(</span><span class="n">NfcAdapter</span><span class="o">.</span><span class="na">ACTION_NDEF_DISCOVERED</span><span class="o">.</span><span class="na">equals</span><span class="o">(</span><span class="n">getIntent</span><span class="o">().</span><span class="na">getAction</span><span class="o">()))</span> <span class="o">{</span>
+</span><span class='line'>            <span class="n">processIntent</span><span class="o">(</span><span class="n">getIntent</span><span class="o">());</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@Override</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onNewIntent</span><span class="o">(</span><span class="n">Intent</span> <span class="n">intent</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">setIntent</span><span class="o">(</span><span class="n">intent</span><span class="o">);</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">void</span> <span class="nf">processIntent</span><span class="o">(</span><span class="n">Intent</span> <span class="n">intent</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">Parcelable</span><span class="o">[]</span> <span class="n">rawMessages</span> <span class="o">=</span>             <span class="n">intent</span><span class="o">.</span><span class="na">getParcelableArrayExtra</span><span class="o">(</span><span class="n">NfcAdapter</span><span class="o">.</span><span class="na">EXTRA_NDEF_MESSAGES</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">NdefMessage</span> <span class="n">msg</span> <span class="o">=</span> <span class="o">(</span><span class="n">NdefMessage</span><span class="o">)</span> <span class="n">rawMessages</span><span class="o">[</span><span class="mi">0</span><span class="o">];</span>
+</span><span class='line'>        <span class="n">String</span> <span class="n">info</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">String</span><span class="o">(</span><span class="n">msg</span><span class="o">.</span><span class="na">getRecords</span><span class="o">()[</span><span class="mi">0</span><span class="o">].</span><span class="na">getPayload</span><span class="o">());</span>
+</span><span class='line'>        <span class="n">Toast</span><span class="o">.</span><span class="na">makeText</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">info</span><span class="o">,</span> <span class="n">Toast</span><span class="o">.</span><span class="na">LENGTH_SHORT</span><span class="o">).</span><span class="na">show</span><span class="o">();</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Card emulation mode</h3>
+
+<p>Android4.4之前通过在Android设备中内置一个芯片来实现。通信路径如下图：</p>
+
+<p><img src="/images/articles/NFC_SE.png" alt="NFC_SE" /></p>
+
+<p>Android4.4之后可以通过纯软件模拟NFC卡。通信路径如下图：</p>
+
+<p><img src="/images/articles/NFC_HCE.png" alt="NFC_HCE" /></p>
+
+<p>在Android上层程序只需实现一个服务，并且给服务绑定一个ID，便可以模拟成NFC卡，根据读卡器发出的ID响应数据。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">MyHostApduService</span> <span class="kd">extends</span> <span class="n">HostApduService</span> <span class="o">{</span>
+</span><span class='line'>    <span class="nd">@Override</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kt">byte</span><span class="o">[]</span> <span class="nf">processCommandApdu</span><span class="o">(</span><span class="kt">byte</span><span class="o">[]</span> <span class="n">apdu</span><span class="o">,</span> <span class="n">Bundle</span> <span class="n">extras</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>       <span class="o">...</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>    <span class="nd">@Override</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onDeactivated</span><span class="o">(</span><span class="kt">int</span> <span class="n">reason</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>       <span class="o">...</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;service</span> <span class="na">android:name=</span><span class="s">&quot;.MyHostApduService&quot;</span> <span class="na">android:exported=</span><span class="s">&quot;true&quot;</span>
+</span><span class='line'>         <span class="na">android:permission=</span><span class="s">&quot;android.permission.BIND_NFC_SERVICE&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;intent-filter&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;action</span> <span class="na">android:name=</span><span class="s">&quot;android.nfc.cardemulation.action.HOST_APDU_SERVICE&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;/intent-filter&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;meta-data</span> <span class="na">android:name=</span><span class="s">&quot;android.nfc.cardemulation.host_apdu_service&quot;</span>
+</span><span class='line'>               <span class="na">android:resource=</span><span class="s">&quot;@xml/apduservice&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'><span class="nt">&lt;/service&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;host-apdu-service</span> <span class="na">xmlns:android=</span><span class="s">&quot;http://schemas.android.com/apk/res/android&quot;</span>
+</span><span class='line'>           <span class="na">android:description=</span><span class="s">&quot;@string/servicedesc&quot;</span>
+</span><span class='line'>           <span class="na">android:requireDeviceUnlock=</span><span class="s">&quot;false&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;aid-group</span> <span class="na">android:description=</span><span class="s">&quot;@string/aiddescription&quot;</span>
+</span><span class='line'>               <span class="na">android:category=</span><span class="s">&quot;other&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;aid-filter</span> <span class="na">android:name=</span><span class="s">&quot;F0010203040506&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;aid-filter</span> <span class="na">android:name=</span><span class="s">&quot;F0394148148100&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;/aid-group&gt;</span>
+</span><span class='line'><span class="nt">&lt;/host-apdu-service&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<hr />
+
+<h4>相关资料</h4>
+
+<p>1.NDEF数据解析实例：<a href="http://note.youdao.com/share/?id=8b45d342e34d2bce0fade2218bafd79c&amp;type=note">http</a><a href="http://note.youdao.com/share/?id=8b45d342e34d2bce0fade2218bafd79c&amp;type=note">://note.youdao.com/share/?id=8b45d342e34d2bce0fade2218bafd79c&amp;type=note#</a><a href="http://note.youdao.com/share/?id=8b45d342e34d2bce0fade2218bafd79c&amp;type=note">/</a></p>
+
+<p>2.AndnroidNFC官网介绍：<a href="https://developer.android.com/guide/topics/connectivity/nfc/index.html">https</a><a href="https://developer.android.com/guide/topics/connectivity/nfc/index.html">://</a><a href="https://developer.android.com/guide/topics/connectivity/nfc/index.html">developer.android.com/guide/topics/connectivity/nfc/index.html</a></p>
+
+<p>3.NFC相关的应用：NXPTagWriter、NXPTagInfo、MIFARE经典工具</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">monkey_liu</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2017-02-28T13:08:50+08:00'><span class='date'><span class='date-month'>Feb</span> <span class='date-day'>28</span><span class='date-suffix'>th</span>, <span class='date-year'>2017</span></span> <span class='time'>1:08 pm</span></time>
+      
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://www.monkeyliu.com/blog/2017/02/28/androidnfc/" data-via="" data-counturl="http://www.monkeyliu.com/blog/2017/02/28/androidnfc/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2016/08/08/handler/" title="Previous Post: Android的消息机制-Handler">&laquo; Android的消息机制-Handler</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2017/02/28/androidnfc/">Android NFC开发入门</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2016/08/08/handler/">Android的消息机制-Handler</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2016/06/17/touchevent/">Android事件分发机制</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2016/03/07/androidthreadpool/">线程池的使用总结</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2017 - monkey_liu -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
