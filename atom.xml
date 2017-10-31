@@ -4,7 +4,7 @@
   <title><![CDATA[AndroidDev]]></title>
   <link href="http://www.monkeyliu.com/atom.xml" rel="self"/>
   <link href="http://www.monkeyliu.com/"/>
-  <updated>2017-07-10T20:45:43+08:00</updated>
+  <updated>2017-10-31T17:06:17+08:00</updated>
   <id>http://www.monkeyliu.com/</id>
   <author>
     <name><![CDATA[放开那个猴子]]></name>
@@ -12,6 +12,1277 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Android按键事件分发机制]]></title>
+    <link href="http://www.monkeyliu.com/blog/2017/10/23/keyevent-dispatch/"/>
+    <updated>2017-10-23T06:51:09+08:00</updated>
+    <id>http://www.monkeyliu.com/blog/2017/10/23/keyevent-dispatch</id>
+    <content type="html"><![CDATA[<p>本文总结一下Android中按键事件的分发机制。Android的按键事件分发跟触摸事件分发类似，甚至比触摸事件分发更加简单！</p>
+
+<h3>1.事件分发的根源</h3>
+
+<p>首先，来回顾一下触摸事件分发的大致流程:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">dispatchTouchEvent</span><span class="o">(</span><span class="n">MotionEvent</span> <span class="n">ev</span><span class="o">){</span>
+</span><span class='line'>  <span class="kt">boolean</span> <span class="n">consume</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+</span><span class='line'>  <span class="k">if</span><span class="o">(</span><span class="n">onInterceptTouchEvent</span><span class="o">(</span><span class="n">ev</span><span class="o">)){</span>
+</span><span class='line'>      <span class="n">consume</span> <span class="o">=</span> <span class="n">onTouchEvent</span><span class="o">(</span><span class="n">ev</span><span class="o">);</span>
+</span><span class='line'>  <span class="o">}</span><span class="k">else</span><span class="o">{</span>
+</span><span class='line'>      <span class="n">consume</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="na">dispatchTouchEvent</span><span class="o">(</span><span class="n">ev</span><span class="o">);</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'>  <span class="k">return</span> <span class="n">consume</span><span class="o">;</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>那么最开始的<code>dispatchTouchEvent</code>是哪里调用的，事件的根源是从哪里传上来的？</p>
+
+<!-- more -->
+
+
+<p><img src="http://www.monkeyliu.com/images/articles/focus_root.png" alt="key_route" /></p>
+
+<p>其中"一系列的InputStage"用到了责任链模式对事件依次进行处理。</p>
+
+<p>InputStage责任链的创建：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">mSyntheticInputStage</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">SyntheticInputStage</span><span class="o">();</span>
+</span><span class='line'><span class="n">InputStage</span> <span class="n">viewPostImeStage</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">ViewPostImeInputStage</span><span class="o">(</span><span class="n">mSyntheticInputStage</span><span class="o">);</span>
+</span><span class='line'><span class="n">InputStage</span> <span class="n">nativePostImeStage</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">NativePostImeInputStage</span><span class="o">(</span><span class="n">viewPostImeStage</span><span class="o">,</span>
+</span><span class='line'>                        <span class="s">&quot;aq:native-post-ime:&quot;</span> <span class="o">+</span> <span class="n">counterSuffix</span><span class="o">);</span>
+</span><span class='line'><span class="n">InputStage</span> <span class="n">earlyPostImeStage</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">EarlyPostImeInputStage</span><span class="o">(</span><span class="n">nativePostImeStage</span><span class="o">);</span>
+</span><span class='line'><span class="n">InputStage</span> <span class="n">imeStage</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">ImeInputStage</span><span class="o">(</span><span class="n">earlyPostImeStage</span><span class="o">,</span>
+</span><span class='line'>                        <span class="s">&quot;aq:ime:&quot;</span> <span class="o">+</span> <span class="n">counterSuffix</span><span class="o">);</span>
+</span><span class='line'><span class="n">InputStage</span> <span class="n">viewPreImeStage</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">ViewPreImeInputStage</span><span class="o">(</span><span class="n">imeStage</span><span class="o">);</span>
+</span><span class='line'><span class="n">InputStage</span> <span class="n">nativePreImeStage</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">NativePreImeInputStage</span><span class="o">(</span><span class="n">viewPreImeStage</span><span class="o">,</span>
+</span><span class='line'>                        <span class="s">&quot;aq:native-pre-ime:&quot;</span> <span class="o">+</span> <span class="n">counterSuffix</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">mFirstInputStage</span> <span class="o">=</span> <span class="n">nativePreImeStage</span><span class="o">;</span>
+</span><span class='line'><span class="n">mFirstPostImeInputStage</span> <span class="o">=</span> <span class="n">earlyPostImeStage</span><span class="o">;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>最终可以在ViewPostImeInputStage中看到对事件的具体处理：</p>
+
+<p>[@ViewPostImeInputStage]</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">protected</span> <span class="kt">int</span> <span class="nf">onProcess</span><span class="o">(</span><span class="n">QueuedInputEvent</span> <span class="n">q</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="k">if</span> <span class="o">(</span><span class="n">q</span><span class="o">.</span><span class="na">mEvent</span> <span class="k">instanceof</span> <span class="n">KeyEvent</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                <span class="k">return</span> <span class="nf">processKeyEvent</span><span class="o">(</span><span class="n">q</span><span class="o">);</span>
+</span><span class='line'>            <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+</span><span class='line'>                <span class="c1">// If delivering a new non-key event, make sure the window is</span>
+</span><span class='line'>                <span class="c1">// now allowed to start updating.</span>
+</span><span class='line'>                <span class="n">handleDispatchWindowAnimationStopped</span><span class="o">();</span>
+</span><span class='line'>                <span class="kd">final</span> <span class="kt">int</span> <span class="n">source</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="na">mEvent</span><span class="o">.</span><span class="na">getSource</span><span class="o">();</span>
+</span><span class='line'>                <span class="k">if</span> <span class="o">((</span><span class="n">source</span> <span class="o">&amp;</span> <span class="n">InputDevice</span><span class="o">.</span><span class="na">SOURCE_CLASS_POINTER</span><span class="o">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                    <span class="k">return</span> <span class="nf">processPointerEvent</span><span class="o">(</span><span class="n">q</span><span class="o">);</span>
+</span><span class='line'>                <span class="o">}</span> <span class="k">else</span> <span class="nf">if</span> <span class="o">((</span><span class="n">source</span> <span class="o">&amp;</span> <span class="n">InputDevice</span><span class="o">.</span><span class="na">SOURCE_CLASS_TRACKBALL</span><span class="o">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                    <span class="k">return</span> <span class="nf">processTrackballEvent</span><span class="o">(</span><span class="n">q</span><span class="o">);</span>
+</span><span class='line'>                <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+</span><span class='line'>                    <span class="k">return</span> <span class="nf">processGenericMotionEvent</span><span class="o">(</span><span class="n">q</span><span class="o">);</span>
+</span><span class='line'>                <span class="o">}</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>        <span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这里根据InputEvent的类型进行不同的处理，如果是<code>KeyEvent</code>，进入<code>processKeyEvent</code>流程；否则如果是<code>MotionEvent</code>，根据具体的事件源来进入不同的流程。其中，触摸事件的分发就是进入到<code>processPointerEvent</code>中处理，进去再走几步就到了我们熟悉的<code>dispatchTouchEvent</code>。</p>
+
+<p>1.2 继续跟进<code>processKeyEvent</code>:</p>
+
+<p>[@ViewPostImeInputStage]</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">private</span> <span class="kt">int</span> <span class="nf">processKeyEvent</span><span class="o">(</span><span class="n">QueuedInputEvent</span> <span class="n">q</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="kd">final</span> <span class="n">KeyEvent</span> <span class="n">event</span> <span class="o">=</span> <span class="o">(</span><span class="n">KeyEvent</span><span class="o">)</span><span class="n">q</span><span class="o">.</span><span class="na">mEvent</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="c1">// Deliver the key to the view hierarchy.</span>
+</span><span class='line'>            <span class="k">if</span> <span class="o">(</span><span class="n">mView</span><span class="o">.</span><span class="na">dispatchKeyEvent</span><span class="o">(</span><span class="n">event</span><span class="o">))</span> <span class="o">{</span>
+</span><span class='line'>                <span class="k">return</span> <span class="n">FINISH_HANDLED</span><span class="o">;</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="c1">// Handle automatic focus changes.</span>
+</span><span class='line'>            <span class="k">if</span> <span class="o">(</span><span class="n">event</span><span class="o">.</span><span class="na">getAction</span><span class="o">()</span> <span class="o">==</span> <span class="n">KeyEvent</span><span class="o">.</span><span class="na">ACTION_DOWN</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                <span class="kt">int</span> <span class="n">direction</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span>
+</span><span class='line'>                <span class="k">switch</span> <span class="o">(</span><span class="n">event</span><span class="o">.</span><span class="na">getKeyCode</span><span class="o">())</span> <span class="o">{</span>
+</span><span class='line'>                    <span class="k">case</span> <span class="n">KeyEvent</span><span class="o">.</span><span class="na">KEYCODE_DPAD_LEFT</span><span class="o">:</span>
+</span><span class='line'>                        <span class="k">if</span> <span class="o">(</span><span class="n">event</span><span class="o">.</span><span class="na">hasNoModifiers</span><span class="o">())</span> <span class="o">{</span>
+</span><span class='line'>                            <span class="n">direction</span> <span class="o">=</span> <span class="n">View</span><span class="o">.</span><span class="na">FOCUS_LEFT</span><span class="o">;</span>
+</span><span class='line'>                        <span class="o">}</span>
+</span><span class='line'>                        <span class="k">break</span><span class="o">;</span>
+</span><span class='line'>                    <span class="k">case</span> <span class="n">KeyEvent</span><span class="o">.</span><span class="na">KEYCODE_DPAD_RIGHT</span><span class="o">:</span>
+</span><span class='line'>                        <span class="k">if</span> <span class="o">(</span><span class="n">event</span><span class="o">.</span><span class="na">hasNoModifiers</span><span class="o">())</span> <span class="o">{</span>
+</span><span class='line'>                            <span class="n">direction</span> <span class="o">=</span> <span class="n">View</span><span class="o">.</span><span class="na">FOCUS_RIGHT</span><span class="o">;</span>
+</span><span class='line'>                        <span class="o">}</span>
+</span><span class='line'>                        <span class="k">break</span><span class="o">;</span>
+</span><span class='line'>                    <span class="k">case</span> <span class="n">KeyEvent</span><span class="o">.</span><span class="na">KEYCODE_DPAD_UP</span><span class="o">:</span>
+</span><span class='line'>                        <span class="k">if</span> <span class="o">(</span><span class="n">event</span><span class="o">.</span><span class="na">hasNoModifiers</span><span class="o">())</span> <span class="o">{</span>
+</span><span class='line'>                            <span class="n">direction</span> <span class="o">=</span> <span class="n">View</span><span class="o">.</span><span class="na">FOCUS_UP</span><span class="o">;</span>
+</span><span class='line'>                        <span class="o">}</span>
+</span><span class='line'>                        <span class="k">break</span><span class="o">;</span>
+</span><span class='line'>                    <span class="k">case</span> <span class="n">KeyEvent</span><span class="o">.</span><span class="na">KEYCODE_DPAD_DOWN</span><span class="o">:</span>
+</span><span class='line'>                        <span class="k">if</span> <span class="o">(</span><span class="n">event</span><span class="o">.</span><span class="na">hasNoModifiers</span><span class="o">())</span> <span class="o">{</span>
+</span><span class='line'>                            <span class="n">direction</span> <span class="o">=</span> <span class="n">View</span><span class="o">.</span><span class="na">FOCUS_DOWN</span><span class="o">;</span>
+</span><span class='line'>                        <span class="o">}</span>
+</span><span class='line'>                        <span class="k">break</span><span class="o">;</span>
+</span><span class='line'>                    <span class="k">case</span> <span class="n">KeyEvent</span><span class="o">.</span><span class="na">KEYCODE_TAB</span><span class="o">:</span>
+</span><span class='line'>                        <span class="k">if</span> <span class="o">(</span><span class="n">event</span><span class="o">.</span><span class="na">hasNoModifiers</span><span class="o">())</span> <span class="o">{</span>
+</span><span class='line'>                            <span class="n">direction</span> <span class="o">=</span> <span class="n">View</span><span class="o">.</span><span class="na">FOCUS_FORWARD</span><span class="o">;</span>
+</span><span class='line'>                        <span class="o">}</span> <span class="k">else</span> <span class="nf">if</span> <span class="o">(</span><span class="n">event</span><span class="o">.</span><span class="na">hasModifiers</span><span class="o">(</span><span class="n">KeyEvent</span><span class="o">.</span><span class="na">META_SHIFT_ON</span><span class="o">))</span> <span class="o">{</span>
+</span><span class='line'>                            <span class="n">direction</span> <span class="o">=</span> <span class="n">View</span><span class="o">.</span><span class="na">FOCUS_BACKWARD</span><span class="o">;</span>
+</span><span class='line'>                        <span class="o">}</span>
+</span><span class='line'>                        <span class="k">break</span><span class="o">;</span>
+</span><span class='line'>                <span class="o">}</span>
+</span><span class='line'>                <span class="k">if</span> <span class="o">(</span><span class="n">direction</span> <span class="o">!=</span> <span class="mi">0</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                    <span class="n">View</span> <span class="n">focused</span> <span class="o">=</span> <span class="n">mView</span><span class="o">.</span><span class="na">findFocus</span><span class="o">();</span>
+</span><span class='line'>                    <span class="k">if</span> <span class="o">(</span><span class="n">focused</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                        <span class="n">View</span> <span class="n">v</span> <span class="o">=</span> <span class="n">focused</span><span class="o">.</span><span class="na">focusSearch</span><span class="o">(</span><span class="n">direction</span><span class="o">);</span>
+</span><span class='line'>                        <span class="k">if</span> <span class="o">(</span><span class="n">v</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">v</span> <span class="o">!=</span> <span class="n">focused</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                            <span class="c1">// do the math the get the interesting rect</span>
+</span><span class='line'>                            <span class="c1">// of previous focused into the coord system of</span>
+</span><span class='line'>                            <span class="c1">// newly focused view</span>
+</span><span class='line'>                            <span class="n">focused</span><span class="o">.</span><span class="na">getFocusedRect</span><span class="o">(</span><span class="n">mTempRect</span><span class="o">);</span>
+</span><span class='line'>                            <span class="k">if</span> <span class="o">(</span><span class="n">mView</span> <span class="k">instanceof</span> <span class="n">ViewGroup</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                                <span class="o">((</span><span class="n">ViewGroup</span><span class="o">)</span> <span class="n">mView</span><span class="o">).</span><span class="na">offsetDescendantRectToMyCoords</span><span class="o">(</span>
+</span><span class='line'>                                        <span class="n">focused</span><span class="o">,</span> <span class="n">mTempRect</span><span class="o">);</span>
+</span><span class='line'>                                <span class="o">((</span><span class="n">ViewGroup</span><span class="o">)</span> <span class="n">mView</span><span class="o">).</span><span class="na">offsetRectIntoDescendantCoords</span><span class="o">(</span>
+</span><span class='line'>                                        <span class="n">v</span><span class="o">,</span> <span class="n">mTempRect</span><span class="o">);</span>
+</span><span class='line'>                            <span class="o">}</span>
+</span><span class='line'>                            <span class="k">if</span> <span class="o">(</span><span class="n">v</span><span class="o">.</span><span class="na">requestFocus</span><span class="o">(</span><span class="n">direction</span><span class="o">,</span> <span class="n">mTempRect</span><span class="o">))</span> <span class="o">{</span>
+</span><span class='line'>                                <span class="n">playSoundEffect</span><span class="o">(</span><span class="n">SoundEffectConstants</span>
+</span><span class='line'>                                        <span class="o">.</span><span class="na">getContantForFocusDirection</span><span class="o">(</span><span class="n">direction</span><span class="o">));</span>
+</span><span class='line'>                                <span class="k">return</span> <span class="n">FINISH_HANDLED</span><span class="o">;</span>
+</span><span class='line'>                            <span class="o">}</span>
+</span><span class='line'>                        <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>                        <span class="c1">// Give the focused view a last chance to handle the dpad key.</span>
+</span><span class='line'>                        <span class="k">if</span> <span class="o">(</span><span class="n">mView</span><span class="o">.</span><span class="na">dispatchUnhandledMove</span><span class="o">(</span><span class="n">focused</span><span class="o">,</span> <span class="n">direction</span><span class="o">))</span> <span class="o">{</span>
+</span><span class='line'>                            <span class="k">return</span> <span class="n">FINISH_HANDLED</span><span class="o">;</span>
+</span><span class='line'>                        <span class="o">}</span>
+</span><span class='line'>                    <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+</span><span class='line'>                        <span class="c1">// find the best view to give focus to in this non-touch-mode with no-focus</span>
+</span><span class='line'>                        <span class="n">View</span> <span class="n">v</span> <span class="o">=</span> <span class="n">focusSearch</span><span class="o">(</span><span class="kc">null</span><span class="o">,</span> <span class="n">direction</span><span class="o">);</span>
+</span><span class='line'>                        <span class="k">if</span> <span class="o">(</span><span class="n">v</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">v</span><span class="o">.</span><span class="na">requestFocus</span><span class="o">(</span><span class="n">direction</span><span class="o">))</span> <span class="o">{</span>
+</span><span class='line'>                            <span class="k">return</span> <span class="n">FINISH_HANDLED</span><span class="o">;</span>
+</span><span class='line'>                        <span class="o">}</span>
+</span><span class='line'>                    <span class="o">}</span>
+</span><span class='line'>                <span class="o">}</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>            <span class="k">return</span> <span class="n">FORWARD</span><span class="o">;</span>
+</span><span class='line'>        <span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>可以看到，大概的过程分为两步：</p>
+
+<ol>
+<li><p>将KeyEvent传入View树中进行分发，如果return true，表示消费了按键事件，返回 <em>FINISH_HANDLED</em>，结束。</p></li>
+<li><p>如果第1步返回false，表示View树中没有能力处理此按键事件，则processKeyEvent中根据此按键来进行焦点的改变。</p>
+
+<p>​</p></li>
+</ol>
+
+
+<p>下面就分两块来详解这两个过程中的具体细节。</p>
+
+<h3>2.按键事件分发的流程</h3>
+
+<p>上面的第一步调用了<code>mView.dispatchKeyEvent(event)</code>来开始事件分发，其中mView是整个View树的最根布局，也就是DecorView。所以进入DecorView的源码看一下：</p>
+
+<p>[@DecorView]</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">dispatchKeyEvent</span><span class="o">(</span><span class="n">KeyEvent</span> <span class="n">event</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="kd">final</span> <span class="kt">int</span> <span class="n">keyCode</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="na">getKeyCode</span><span class="o">();</span>
+</span><span class='line'>            <span class="kd">final</span> <span class="kt">int</span> <span class="n">action</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="na">getAction</span><span class="o">();</span>
+</span><span class='line'>            <span class="kd">final</span> <span class="kt">boolean</span> <span class="n">isDown</span> <span class="o">=</span> <span class="n">action</span> <span class="o">==</span> <span class="n">KeyEvent</span><span class="o">.</span><span class="na">ACTION_DOWN</span><span class="o">;</span>
+</span><span class='line'>          <span class="c1">//...省略部分无关代码</span>
+</span><span class='line'>            <span class="k">if</span> <span class="o">(!</span><span class="n">isDestroyed</span><span class="o">())</span> <span class="o">{</span>
+</span><span class='line'>                <span class="kd">final</span> <span class="n">Callback</span> <span class="n">cb</span> <span class="o">=</span> <span class="n">getCallback</span><span class="o">();</span>
+</span><span class='line'>                <span class="kd">final</span> <span class="kt">boolean</span> <span class="n">handled</span> <span class="o">=</span> <span class="n">cb</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">mFeatureId</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">?</span> <span class="n">cb</span><span class="o">.</span><span class="na">dispatchKeyEvent</span><span class="o">(</span><span class="n">event</span><span class="o">)</span>
+</span><span class='line'>                        <span class="o">:</span> <span class="kd">super</span><span class="o">.</span><span class="na">dispatchKeyEvent</span><span class="o">(</span><span class="n">event</span><span class="o">);</span>
+</span><span class='line'>                <span class="k">if</span> <span class="o">(</span><span class="n">handled</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                    <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+</span><span class='line'>                <span class="o">}</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>               <span class="k">return</span> <span class="n">isDown</span> <span class="o">?</span> <span class="n">PhoneWindow</span><span class="o">.</span><span class="na">this</span><span class="o">.</span><span class="na">onKeyDown</span><span class="o">(</span><span class="n">mFeatureId</span><span class="o">,</span> <span class="n">event</span><span class="o">.</span><span class="na">getKeyCode</span><span class="o">(),</span> <span class="n">event</span><span class="o">)</span>
+</span><span class='line'>                    <span class="o">:</span> <span class="n">PhoneWindow</span><span class="o">.</span><span class="na">this</span><span class="o">.</span><span class="na">onKeyUp</span><span class="o">(</span><span class="n">mFeatureId</span><span class="o">,</span> <span class="n">event</span><span class="o">.</span><span class="na">getKeyCode</span><span class="o">(),</span> <span class="n">event</span><span class="o">);</span>
+</span><span class='line'>        <span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>通过Callback，进入cb.dispatchKeyEvent(event)，这里的Callback就是<code>Activity</code>，<code>Activity</code>实现了Callback接口。通过这儿将事件传到了Activity当中，所以我们可以在Activity中监听到<code>onTouchEvent</code>、<code>onKeyDown</code>、<code>onKeyUp</code>等事件~</p>
+
+<p>[@Activity]</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">dispatchKeyEvent</span><span class="o">(</span><span class="n">KeyEvent</span> <span class="n">event</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">onUserInteraction</span><span class="o">();</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">// Let action bars open menus in response to the menu key prioritized over</span>
+</span><span class='line'>        <span class="c1">// the window handling it</span>
+</span><span class='line'>        <span class="k">if</span> <span class="o">(</span><span class="n">event</span><span class="o">.</span><span class="na">getKeyCode</span><span class="o">()</span> <span class="o">==</span> <span class="n">KeyEvent</span><span class="o">.</span><span class="na">KEYCODE_MENU</span> <span class="o">&amp;&amp;</span>
+</span><span class='line'>                <span class="n">mActionBar</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">mActionBar</span><span class="o">.</span><span class="na">onMenuKeyEvent</span><span class="o">(</span><span class="n">event</span><span class="o">))</span> <span class="o">{</span>
+</span><span class='line'>            <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">Window</span> <span class="n">win</span> <span class="o">=</span> <span class="n">getWindow</span><span class="o">();</span>
+</span><span class='line'>        <span class="k">if</span> <span class="o">(</span><span class="n">win</span><span class="o">.</span><span class="na">superDispatchKeyEvent</span><span class="o">(</span><span class="n">event</span><span class="o">))</span> <span class="o">{</span>
+</span><span class='line'>            <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>        <span class="n">View</span> <span class="n">decor</span> <span class="o">=</span> <span class="n">mDecor</span><span class="o">;</span>
+</span><span class='line'>        <span class="k">if</span> <span class="o">(</span><span class="n">decor</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="n">decor</span> <span class="o">=</span> <span class="n">win</span><span class="o">.</span><span class="na">getDecorView</span><span class="o">();</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">event</span><span class="o">.</span><span class="na">dispatch</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">decor</span> <span class="o">!=</span> <span class="kc">null</span>
+</span><span class='line'>                <span class="o">?</span> <span class="n">decor</span><span class="o">.</span><span class="na">getKeyDispatcherState</span><span class="o">()</span> <span class="o">:</span> <span class="kc">null</span><span class="o">,</span> <span class="k">this</span><span class="o">);</span>
+</span><span class='line'>    <span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这里通过Window.superDispatchKeyEvent又将事件传到DecorView处理.</p>
+
+<p>[@PhoneWindow]</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="nd">@Override</span>
+</span><span class='line'><span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">superDispatchKeyEvent</span><span class="o">(</span><span class="n">KeyEvent</span> <span class="n">event</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">mDecor</span><span class="o">.</span><span class="na">superDispatchKeyEvent</span><span class="o">(</span><span class="n">event</span><span class="o">);</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>[@DecorView]</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">superDispatchKeyEvent</span><span class="o">(</span><span class="n">KeyEvent</span> <span class="n">event</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>     <span class="c1">//...省略无关代码</span>
+</span><span class='line'>     <span class="k">return</span> <span class="kd">super</span><span class="o">.</span><span class="na">dispatchKeyEvent</span><span class="o">(</span><span class="n">event</span><span class="o">);</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>接下来调用super.dispatchKeyEvent进入ViewGroup中，开始真正的事件分发了！</p>
+
+<p>首先看一下按键事件分发的大致流程，非常简单：</p>
+
+<p>[@ViewGroup]</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="nd">@Override</span>
+</span><span class='line'><span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">dispatchKeyEvent</span><span class="o">(</span><span class="n">KeyEvent</span> <span class="n">event</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>          <span class="c1">//简化过后的逻辑</span>
+</span><span class='line'>     <span class="k">if</span> <span class="o">(</span><span class="kd">super</span><span class="o">.</span><span class="na">dispatchKeyEvent</span><span class="o">(</span><span class="n">event</span><span class="o">))</span> <span class="o">{</span>
+</span><span class='line'>         <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+</span><span class='line'>      <span class="o">}</span> <span class="k">else</span> <span class="nf">if</span> <span class="o">(</span><span class="n">mFocused</span><span class="o">.</span><span class="na">dispatchKeyEvent</span><span class="o">(</span><span class="n">event</span><span class="o">))</span> <span class="o">{</span>
+</span><span class='line'>         <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+</span><span class='line'>     <span class="o">}</span>
+</span><span class='line'>     <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>在ViewGroup进行分发的逻辑为：</p>
+
+<p>先把事件交给自己的dispatchKeyEvent进行处理，如果消费了，结束。否则将事件传递给mFocused(含有焦点的子View)，继续分发。</p>
+
+<blockquote><p>关于mFocused的赋值，可以从<code>View.reqeustFocus()</code>方法追踪到<code>ViewGroup.reqeustChildFocus</code>方法</p>
+
+<p>[@ViewGroup]</p>
+
+<pre><code class="java">public void requestChildFocus(View child, View focused) {
+        if (DBG) {
+            System.out.println(this + " requestChildFocus()");
+        }
+        if (getDescendantFocusability() == FOCUS_BLOCK_DESCENDANTS) {
+            return;
+        }
+
+        // Unfocus us, if necessary
+        super.unFocus(focused);
+
+        // We had a previous notion of who had focus. Clear it.
+        if (mFocused != child) {
+            if (mFocused != null) {
+                mFocused.unFocus(focused);
+            }
+
+            mFocused = child;
+        }
+        if (mParent != null) {
+            mParent.requestChildFocus(this, focused);
+        }
+    }
+</code></pre>
+
+<p>当一个View请求焦点之后，依次向父View(mParent)调用，给mFocused赋值。这样便可以从最外层的ViewGroup按照mFocused变量遍历找到获取焦点的View.</p></blockquote>
+
+<p><em>另外，这里mFocused可以类比触摸事件分发中根据触摸位置定位到的targetView</em></p>
+
+<p>[@View]</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">dispatchKeyEvent</span><span class="o">(</span><span class="n">KeyEvent</span> <span class="n">event</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="c1">// Give any attached key listener a first crack at the event.</span>
+</span><span class='line'>        <span class="c1">//noinspection SimplifiableIfStatement</span>
+</span><span class='line'>        <span class="n">ListenerInfo</span> <span class="n">li</span> <span class="o">=</span> <span class="n">mListenerInfo</span><span class="o">;</span>
+</span><span class='line'>        <span class="k">if</span> <span class="o">(</span><span class="n">li</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">li</span><span class="o">.</span><span class="na">mOnKeyListener</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="o">(</span><span class="n">mViewFlags</span> <span class="o">&amp;</span> <span class="n">ENABLED_MASK</span><span class="o">)</span> <span class="o">==</span> <span class="n">ENABLED</span>
+</span><span class='line'>                <span class="o">&amp;&amp;</span> <span class="n">li</span><span class="o">.</span><span class="na">mOnKeyListener</span><span class="o">.</span><span class="na">onKey</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">event</span><span class="o">.</span><span class="na">getKeyCode</span><span class="o">(),</span> <span class="n">event</span><span class="o">))</span> <span class="o">{</span>
+</span><span class='line'>            <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">if</span> <span class="o">(</span><span class="n">event</span><span class="o">.</span><span class="na">dispatch</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">mAttachInfo</span> <span class="o">!=</span> <span class="kc">null</span>
+</span><span class='line'>                <span class="o">?</span> <span class="n">mAttachInfo</span><span class="o">.</span><span class="na">mKeyDispatchState</span> <span class="o">:</span> <span class="kc">null</span><span class="o">,</span> <span class="k">this</span><span class="o">))</span> <span class="o">{</span>
+</span><span class='line'>            <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>        <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>可以看出这里有两种方式消费一个事件。</p>
+
+<ol>
+<li><p>setOnKeyListener，并且返回true，消费事件。</p></li>
+<li><p>event.dispatch()返回true消费事件。这里里面其实是调用了<code>onKeyDown</code>和<code>onKeyUp</code>等方法。所以可以复写View的onKeyDown、onKeyUp等方法，来消费一个按键事件。</p>
+
+<p>​</p></li>
+</ol>
+
+
+<p>来看一下View中的<code>onKeyUp</code>的默认实现：</p>
+
+<p>[@View]</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">onKeyUp</span><span class="o">(</span><span class="kt">int</span> <span class="n">keyCode</span><span class="o">,</span> <span class="n">KeyEvent</span> <span class="n">event</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="o">(</span><span class="n">KeyEvent</span><span class="o">.</span><span class="na">isConfirmKey</span><span class="o">(</span><span class="n">keyCode</span><span class="o">))</span> <span class="o">{</span>
+</span><span class='line'>            <span class="k">if</span> <span class="o">((</span><span class="n">mViewFlags</span> <span class="o">&amp;</span> <span class="n">ENABLED_MASK</span><span class="o">)</span> <span class="o">==</span> <span class="n">DISABLED</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>            <span class="k">if</span> <span class="o">((</span><span class="n">mViewFlags</span> <span class="o">&amp;</span> <span class="n">CLICKABLE</span><span class="o">)</span> <span class="o">==</span> <span class="n">CLICKABLE</span> <span class="o">&amp;&amp;</span> <span class="n">isPressed</span><span class="o">())</span> <span class="o">{</span>
+</span><span class='line'>                <span class="n">setPressed</span><span class="o">(</span><span class="kc">false</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>                <span class="k">if</span> <span class="o">(!</span><span class="n">mHasPerformedLongPress</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                    <span class="c1">// This is a tap, so remove the longpress check</span>
+</span><span class='line'>                    <span class="n">removeLongPressCallback</span><span class="o">();</span>
+</span><span class='line'>                    <span class="k">return</span> <span class="nf">performClick</span><span class="o">();</span>
+</span><span class='line'>                <span class="o">}</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>        <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>可以看出View会默认消费<strong>确认键</strong>，其他类型的按键一律不消费。</p>
+
+<p>总结：</p>
+
+<p>默认情况下，KeyEvent事件从DecorView一层层传递到focused view。对于确认键，则触发click，消费掉，结束。对于其他按键不处理，最终返回false，进行下一步的处理。</p>
+
+<p>其中，我们可以setOnKeyListener或者复写onKeyDown、onKeyUp等方法返回true，来消费事件，阻止下一步的寻找焦点处理。</p>
+
+<p>对于没有消费的事件，来看一下是如何进行下一步处理的！</p>
+
+<h3>3.焦点自动处理流程</h3>
+
+<p>再贴一遍ViewPostImeInputStage的按键处理逻辑：</p>
+
+<p>[@ViewPostImeInputStage]</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">private</span> <span class="kt">int</span> <span class="nf">processKeyEvent</span><span class="o">(</span><span class="n">QueuedInputEvent</span> <span class="n">q</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="kd">final</span> <span class="n">KeyEvent</span> <span class="n">event</span> <span class="o">=</span> <span class="o">(</span><span class="n">KeyEvent</span><span class="o">)</span><span class="n">q</span><span class="o">.</span><span class="na">mEvent</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="c1">// 1.Deliver the key to the view hierarchy.</span>
+</span><span class='line'>            <span class="k">if</span> <span class="o">(</span><span class="n">mView</span><span class="o">.</span><span class="na">dispatchKeyEvent</span><span class="o">(</span><span class="n">event</span><span class="o">))</span> <span class="o">{</span>
+</span><span class='line'>                <span class="k">return</span> <span class="n">FINISH_HANDLED</span><span class="o">;</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="c1">// 2.Handle automatic focus changes.</span>
+</span><span class='line'>            <span class="k">if</span> <span class="o">(</span><span class="n">event</span><span class="o">.</span><span class="na">getAction</span><span class="o">()</span> <span class="o">==</span> <span class="n">KeyEvent</span><span class="o">.</span><span class="na">ACTION_DOWN</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                <span class="kt">int</span> <span class="n">direction</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span>
+</span><span class='line'>                <span class="k">switch</span> <span class="o">(</span><span class="n">event</span><span class="o">.</span><span class="na">getKeyCode</span><span class="o">())</span> <span class="o">{</span>
+</span><span class='line'>                    <span class="k">case</span> <span class="n">KeyEvent</span><span class="o">.</span><span class="na">KEYCODE_DPAD_LEFT</span><span class="o">:</span>
+</span><span class='line'>                        <span class="k">if</span> <span class="o">(</span><span class="n">event</span><span class="o">.</span><span class="na">hasNoModifiers</span><span class="o">())</span> <span class="o">{</span>
+</span><span class='line'>                            <span class="n">direction</span> <span class="o">=</span> <span class="n">View</span><span class="o">.</span><span class="na">FOCUS_LEFT</span><span class="o">;</span>
+</span><span class='line'>                        <span class="o">}</span>
+</span><span class='line'>                        <span class="k">break</span><span class="o">;</span>
+</span><span class='line'>                    <span class="k">case</span> <span class="n">KeyEvent</span><span class="o">.</span><span class="na">KEYCODE_DPAD_RIGHT</span><span class="o">:</span>
+</span><span class='line'>                        <span class="k">if</span> <span class="o">(</span><span class="n">event</span><span class="o">.</span><span class="na">hasNoModifiers</span><span class="o">())</span> <span class="o">{</span>
+</span><span class='line'>                            <span class="n">direction</span> <span class="o">=</span> <span class="n">View</span><span class="o">.</span><span class="na">FOCUS_RIGHT</span><span class="o">;</span>
+</span><span class='line'>                        <span class="o">}</span>
+</span><span class='line'>                        <span class="k">break</span><span class="o">;</span>
+</span><span class='line'>                    <span class="k">case</span> <span class="n">KeyEvent</span><span class="o">.</span><span class="na">KEYCODE_DPAD_UP</span><span class="o">:</span>
+</span><span class='line'>                        <span class="k">if</span> <span class="o">(</span><span class="n">event</span><span class="o">.</span><span class="na">hasNoModifiers</span><span class="o">())</span> <span class="o">{</span>
+</span><span class='line'>                            <span class="n">direction</span> <span class="o">=</span> <span class="n">View</span><span class="o">.</span><span class="na">FOCUS_UP</span><span class="o">;</span>
+</span><span class='line'>                        <span class="o">}</span>
+</span><span class='line'>                        <span class="k">break</span><span class="o">;</span>
+</span><span class='line'>                    <span class="k">case</span> <span class="n">KeyEvent</span><span class="o">.</span><span class="na">KEYCODE_DPAD_DOWN</span><span class="o">:</span>
+</span><span class='line'>                        <span class="k">if</span> <span class="o">(</span><span class="n">event</span><span class="o">.</span><span class="na">hasNoModifiers</span><span class="o">())</span> <span class="o">{</span>
+</span><span class='line'>                            <span class="n">direction</span> <span class="o">=</span> <span class="n">View</span><span class="o">.</span><span class="na">FOCUS_DOWN</span><span class="o">;</span>
+</span><span class='line'>                        <span class="o">}</span>
+</span><span class='line'>                        <span class="k">break</span><span class="o">;</span>
+</span><span class='line'>                    <span class="k">case</span> <span class="n">KeyEvent</span><span class="o">.</span><span class="na">KEYCODE_TAB</span><span class="o">:</span>
+</span><span class='line'>                        <span class="k">if</span> <span class="o">(</span><span class="n">event</span><span class="o">.</span><span class="na">hasNoModifiers</span><span class="o">())</span> <span class="o">{</span>
+</span><span class='line'>                            <span class="n">direction</span> <span class="o">=</span> <span class="n">View</span><span class="o">.</span><span class="na">FOCUS_FORWARD</span><span class="o">;</span>
+</span><span class='line'>                        <span class="o">}</span> <span class="k">else</span> <span class="nf">if</span> <span class="o">(</span><span class="n">event</span><span class="o">.</span><span class="na">hasModifiers</span><span class="o">(</span><span class="n">KeyEvent</span><span class="o">.</span><span class="na">META_SHIFT_ON</span><span class="o">))</span> <span class="o">{</span>
+</span><span class='line'>                            <span class="n">direction</span> <span class="o">=</span> <span class="n">View</span><span class="o">.</span><span class="na">FOCUS_BACKWARD</span><span class="o">;</span>
+</span><span class='line'>                        <span class="o">}</span>
+</span><span class='line'>                        <span class="k">break</span><span class="o">;</span>
+</span><span class='line'>                <span class="o">}</span>
+</span><span class='line'>                <span class="k">if</span> <span class="o">(</span><span class="n">direction</span> <span class="o">!=</span> <span class="mi">0</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                    <span class="n">View</span> <span class="n">focused</span> <span class="o">=</span> <span class="n">mView</span><span class="o">.</span><span class="na">findFocus</span><span class="o">();</span>
+</span><span class='line'>                    <span class="k">if</span> <span class="o">(</span><span class="n">focused</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                        <span class="n">View</span> <span class="n">v</span> <span class="o">=</span> <span class="n">focused</span><span class="o">.</span><span class="na">focusSearch</span><span class="o">(</span><span class="n">direction</span><span class="o">);</span>
+</span><span class='line'>                        <span class="k">if</span> <span class="o">(</span><span class="n">v</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">v</span> <span class="o">!=</span> <span class="n">focused</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                            <span class="c1">// do the math the get the interesting rect</span>
+</span><span class='line'>                            <span class="c1">// of previous focused into the coord system of</span>
+</span><span class='line'>                            <span class="c1">// newly focused view</span>
+</span><span class='line'>                            <span class="n">focused</span><span class="o">.</span><span class="na">getFocusedRect</span><span class="o">(</span><span class="n">mTempRect</span><span class="o">);</span>
+</span><span class='line'>                            <span class="k">if</span> <span class="o">(</span><span class="n">mView</span> <span class="k">instanceof</span> <span class="n">ViewGroup</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                                <span class="o">((</span><span class="n">ViewGroup</span><span class="o">)</span> <span class="n">mView</span><span class="o">).</span><span class="na">offsetDescendantRectToMyCoords</span><span class="o">(</span>
+</span><span class='line'>                                        <span class="n">focused</span><span class="o">,</span> <span class="n">mTempRect</span><span class="o">);</span>
+</span><span class='line'>                                <span class="o">((</span><span class="n">ViewGroup</span><span class="o">)</span> <span class="n">mView</span><span class="o">).</span><span class="na">offsetRectIntoDescendantCoords</span><span class="o">(</span>
+</span><span class='line'>                                        <span class="n">v</span><span class="o">,</span> <span class="n">mTempRect</span><span class="o">);</span>
+</span><span class='line'>                            <span class="o">}</span>
+</span><span class='line'>                            <span class="k">if</span> <span class="o">(</span><span class="n">v</span><span class="o">.</span><span class="na">requestFocus</span><span class="o">(</span><span class="n">direction</span><span class="o">,</span> <span class="n">mTempRect</span><span class="o">))</span> <span class="o">{</span>
+</span><span class='line'>                                <span class="n">playSoundEffect</span><span class="o">(</span><span class="n">SoundEffectConstants</span>
+</span><span class='line'>                                        <span class="o">.</span><span class="na">getContantForFocusDirection</span><span class="o">(</span><span class="n">direction</span><span class="o">));</span>
+</span><span class='line'>                                <span class="k">return</span> <span class="n">FINISH_HANDLED</span><span class="o">;</span>
+</span><span class='line'>                            <span class="o">}</span>
+</span><span class='line'>                        <span class="o">}</span>
+</span><span class='line'>                    <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+</span><span class='line'>                        <span class="c1">// find the best view to give focus to in this non-touch-mode with no-focus</span>
+</span><span class='line'>                        <span class="n">View</span> <span class="n">v</span> <span class="o">=</span> <span class="n">focusSearch</span><span class="o">(</span><span class="kc">null</span><span class="o">,</span> <span class="n">direction</span><span class="o">);</span>
+</span><span class='line'>                        <span class="k">if</span> <span class="o">(</span><span class="n">v</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">v</span><span class="o">.</span><span class="na">requestFocus</span><span class="o">(</span><span class="n">direction</span><span class="o">))</span> <span class="o">{</span>
+</span><span class='line'>                            <span class="k">return</span> <span class="n">FINISH_HANDLED</span><span class="o">;</span>
+</span><span class='line'>                        <span class="o">}</span>
+</span><span class='line'>                    <span class="o">}</span>
+</span><span class='line'>                <span class="o">}</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>            <span class="k">return</span> <span class="n">FORWARD</span><span class="o">;</span>
+</span><span class='line'>        <span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>第1步事件在View树中的分发我们已经分析过，对于没有处理的事件进入到<code>processKeyEvent</code>的第2步—— 焦点寻找。</p>
+
+<p>首先，将KeyEvent转换为方向常量<code>View.FOCUS_LEFT</code>、<code>View.FOCUS_RIGHT</code>&hellip;</p>
+
+<p>然后核心逻辑如下：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="k">if</span> <span class="o">(</span><span class="n">direction</span> <span class="o">!=</span> <span class="mi">0</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="n">View</span> <span class="n">focused</span> <span class="o">=</span> <span class="n">mView</span><span class="o">.</span><span class="na">findFocus</span><span class="o">();</span>
+</span><span class='line'>            <span class="k">if</span> <span class="o">(</span><span class="n">focused</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                <span class="n">View</span> <span class="n">v</span> <span class="o">=</span> <span class="n">focused</span><span class="o">.</span><span class="na">focusSearch</span><span class="o">(</span><span class="n">direction</span><span class="o">);</span>
+</span><span class='line'>                <span class="k">if</span> <span class="o">(</span><span class="n">v</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">v</span> <span class="o">!=</span> <span class="n">focused</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                    <span class="c1">// do the math the get the interesting rect</span>
+</span><span class='line'>                    <span class="c1">// of previous focused into the coord system of</span>
+</span><span class='line'>                    <span class="c1">// newly focused view</span>
+</span><span class='line'>                    <span class="n">focused</span><span class="o">.</span><span class="na">getFocusedRect</span><span class="o">(</span><span class="n">mTempRect</span><span class="o">);</span>
+</span><span class='line'>                    <span class="k">if</span> <span class="o">(</span><span class="n">mView</span> <span class="k">instanceof</span> <span class="n">ViewGroup</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                        <span class="o">((</span><span class="n">ViewGroup</span><span class="o">)</span> <span class="n">mView</span><span class="o">).</span><span class="na">offsetDescendantRectToMyCoords</span><span class="o">(</span>
+</span><span class='line'>                                <span class="n">focused</span><span class="o">,</span> <span class="n">mTempRect</span><span class="o">);</span>
+</span><span class='line'>                        <span class="o">((</span><span class="n">ViewGroup</span><span class="o">)</span> <span class="n">mView</span><span class="o">).</span><span class="na">offsetRectIntoDescendantCoords</span><span class="o">(</span>
+</span><span class='line'>                                <span class="n">v</span><span class="o">,</span> <span class="n">mTempRect</span><span class="o">);</span>
+</span><span class='line'>                    <span class="o">}</span>
+</span><span class='line'>                    <span class="k">if</span> <span class="o">(</span><span class="n">v</span><span class="o">.</span><span class="na">requestFocus</span><span class="o">(</span><span class="n">direction</span><span class="o">,</span> <span class="n">mTempRect</span><span class="o">))</span> <span class="o">{</span>
+</span><span class='line'>                        <span class="n">playSoundEffect</span><span class="o">(</span><span class="n">SoundEffectConstants</span>
+</span><span class='line'>                                <span class="o">.</span><span class="na">getContantForFocusDirection</span><span class="o">(</span><span class="n">direction</span><span class="o">));</span>
+</span><span class='line'>                        <span class="k">return</span> <span class="n">FINISH_HANDLED</span><span class="o">;</span>
+</span><span class='line'>                    <span class="o">}</span>
+</span><span class='line'>                <span class="o">}</span>
+</span><span class='line'>            <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+</span><span class='line'>                <span class="c1">// find the best view to give focus to in this non-touch-mode with no-focus</span>
+</span><span class='line'>                <span class="n">View</span> <span class="n">v</span> <span class="o">=</span> <span class="n">focusSearch</span><span class="o">(</span><span class="kc">null</span><span class="o">,</span> <span class="n">direction</span><span class="o">);</span>
+</span><span class='line'>                <span class="k">if</span> <span class="o">(</span><span class="n">v</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="n">v</span><span class="o">.</span><span class="na">requestFocus</span><span class="o">(</span><span class="n">direction</span><span class="o">))</span> <span class="o">{</span>
+</span><span class='line'>                    <span class="k">return</span> <span class="n">FINISH_HANDLED</span><span class="o">;</span>
+</span><span class='line'>                <span class="o">}</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>   <span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>关键代码为<code>focused.focusSearch(direction)</code> , 该方法返回下一个应该获取焦点的View。</p>
+
+<p>进去看下：</p>
+
+<p>[@View]</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="n">View</span> <span class="nf">focusSearch</span><span class="o">(</span><span class="nd">@FocusRealDirection</span> <span class="kt">int</span> <span class="n">direction</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>    <span class="k">if</span> <span class="o">(</span><span class="n">mParent</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">mParent</span><span class="o">.</span><span class="na">focusSearch</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">direction</span><span class="o">);</span>
+</span><span class='line'>    <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>[@ViewGroup]</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="n">View</span> <span class="nf">focusSearch</span><span class="o">(</span><span class="n">View</span> <span class="n">focused</span><span class="o">,</span> <span class="kt">int</span> <span class="n">direction</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="o">(</span><span class="n">isRootNamespace</span><span class="o">())</span> <span class="o">{</span>
+</span><span class='line'>            <span class="c1">// root namespace means we should consider ourselves the top of the</span>
+</span><span class='line'>            <span class="c1">// tree for focus searching; otherwise we could be focus searching</span>
+</span><span class='line'>            <span class="c1">// into other tabs.  see LocalActivityManager and TabHost for more info</span>
+</span><span class='line'>            <span class="k">return</span> <span class="n">FocusFinder</span><span class="o">.</span><span class="na">getInstance</span><span class="o">().</span><span class="na">findNextFocus</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">focused</span><span class="o">,</span> <span class="n">direction</span><span class="o">);</span>
+</span><span class='line'>        <span class="o">}</span> <span class="k">else</span> <span class="nf">if</span> <span class="o">(</span><span class="n">mParent</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="k">return</span> <span class="n">mParent</span><span class="o">.</span><span class="na">focusSearch</span><span class="o">(</span><span class="n">focused</span><span class="o">,</span> <span class="n">direction</span><span class="o">);</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>        <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>不断地调用Parent的focusSearch，直到isRootNamespace(DecorView)。执行<code>FocusFinder.getInstance().findNextFocus()</code>开始真正地寻找下一个焦点。</p>
+
+<p>FocusFinder是一个单例，寻找焦点的逻辑也非常简单：</p>
+
+<p>[@FocusFinder]</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">private</span> <span class="n">View</span> <span class="nf">findNextFocus</span><span class="o">(</span><span class="n">ViewGroup</span> <span class="n">root</span><span class="o">,</span> <span class="n">View</span> <span class="n">focused</span><span class="o">,</span> <span class="n">Rect</span> <span class="n">focusedRect</span><span class="o">,</span> <span class="kt">int</span> <span class="n">direction</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">View</span> <span class="n">next</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+</span><span class='line'>        <span class="k">if</span> <span class="o">(</span><span class="n">focused</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="c1">//1.根据指定属性寻找用户指定的下一个焦点View</span>
+</span><span class='line'>            <span class="n">next</span> <span class="o">=</span> <span class="n">findNextUserSpecifiedFocus</span><span class="o">(</span><span class="n">root</span><span class="o">,</span> <span class="n">focused</span><span class="o">,</span> <span class="n">direction</span><span class="o">);</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>        <span class="k">if</span> <span class="o">(</span><span class="n">next</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="k">return</span> <span class="n">next</span><span class="o">;</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>        <span class="n">ArrayList</span><span class="o">&lt;</span><span class="n">View</span><span class="o">&gt;</span> <span class="n">focusables</span> <span class="o">=</span> <span class="n">mTempList</span><span class="o">;</span>
+</span><span class='line'>        <span class="k">try</span> <span class="o">{</span>
+</span><span class='line'>            <span class="n">focusables</span><span class="o">.</span><span class="na">clear</span><span class="o">();</span>
+</span><span class='line'>            <span class="n">root</span><span class="o">.</span><span class="na">addFocusables</span><span class="o">(</span><span class="n">focusables</span><span class="o">,</span> <span class="n">direction</span><span class="o">);</span>
+</span><span class='line'>            <span class="k">if</span> <span class="o">(!</span><span class="n">focusables</span><span class="o">.</span><span class="na">isEmpty</span><span class="o">())</span> <span class="o">{</span>
+</span><span class='line'>                <span class="c1">//2. 根据方向位置等寻找下一个焦点View</span>
+</span><span class='line'>                <span class="n">next</span> <span class="o">=</span> <span class="n">findNextFocus</span><span class="o">(</span><span class="n">root</span><span class="o">,</span> <span class="n">focused</span><span class="o">,</span> <span class="n">focusedRect</span><span class="o">,</span> <span class="n">direction</span><span class="o">,</span> <span class="n">focusables</span><span class="o">);</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>        <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+</span><span class='line'>            <span class="n">focusables</span><span class="o">.</span><span class="na">clear</span><span class="o">();</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">next</span><span class="o">;</span>
+</span><span class='line'> <span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>焦点寻找分为两步：</p>
+
+<ol>
+<li><p>findNextUserSpecifiedFocus(root, focused, direction) 寻找用户指定的焦点View。我们可以在xml中指定焦点寻找的规则，此方法就是根据指定的id来返回对应的View，代码如下：</p>
+
+<pre><code class="xml">   &lt;Button
+       android:id="@+id/button1"
+       android:layout_width="wrap_content"
+       android:layout_height="wrap_content"
+       android:nextFocusDown="@+id/button2"
+       android:nextFocusUp="@+id/button2"
+       android:nextFocusLeft="@+id/button2"
+       android:nextFocusRight="@+id/button2"
+       android:nextFocusForward="@+id/button2"
+       android:text="Button"/&gt;
+</code></pre></li>
+</ol>
+
+
+<p>2.如果没有指定规则，则根据按键方向，寻找一个最应该获取焦点的View。重点看看这种寻找焦点方式！</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'> <span class="n">ArrayList</span><span class="o">&lt;</span><span class="n">View</span><span class="o">&gt;</span> <span class="n">focusables</span> <span class="o">=</span> <span class="n">mTempList</span><span class="o">;</span>
+</span><span class='line'> <span class="k">try</span> <span class="o">{</span>
+</span><span class='line'>       <span class="n">focusables</span><span class="o">.</span><span class="na">clear</span><span class="o">();</span>
+</span><span class='line'>       <span class="n">root</span><span class="o">.</span><span class="na">addFocusables</span><span class="o">(</span><span class="n">df</span><span class="err">`</span><span class="mi">1</span><span class="n">b1</span> <span class="o">,</span> <span class="n">direction</span><span class="o">)</span>
+</span><span class='line'>       <span class="k">if</span> <span class="o">(!</span><span class="n">focusables</span><span class="o">.</span><span class="na">isEmpty</span><span class="o">())</span> <span class="o">{</span>
+</span><span class='line'>           <span class="n">next</span> <span class="o">=</span> <span class="n">findNextFocus</span><span class="o">(</span><span class="n">root</span><span class="o">,</span> <span class="n">focused</span><span class="o">,</span> <span class="n">focusedRect</span><span class="o">,</span> <span class="n">direction</span><span class="o">,</span> <span class="n">focusables</span><span class="o">);</span>
+</span><span class='line'>       <span class="o">}</span>
+</span><span class='line'> <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+</span><span class='line'>       <span class="n">focusables</span><span class="o">.</span><span class="na">clear</span><span class="o">();</span>
+</span><span class='line'> <span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>首先，构建一个focusables列表，其中包含root下所有可能获取焦点的View.</p>
+
+<p>[@ViewGroup]</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kt">void</span> <span class="nf">addFocusables</span><span class="o">(</span><span class="n">ArrayList</span><span class="o">&lt;</span><span class="n">View</span><span class="o">&gt;</span> <span class="n">views</span><span class="o">,</span> <span class="kt">int</span> <span class="n">direction</span><span class="o">,</span> <span class="kt">int</span> <span class="n">focusableMode</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="kd">final</span> <span class="kt">int</span> <span class="n">focusableCount</span> <span class="o">=</span> <span class="n">views</span><span class="o">.</span><span class="na">size</span><span class="o">();</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="kd">final</span> <span class="kt">int</span> <span class="n">descendantFocusability</span> <span class="o">=</span> <span class="n">getDescendantFocusability</span><span class="o">();</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">if</span> <span class="o">(</span><span class="n">descendantFocusability</span> <span class="o">!=</span> <span class="n">FOCUS_BLOCK_DESCENDANTS</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="kd">final</span> <span class="kt">int</span> <span class="n">count</span> <span class="o">=</span> <span class="n">mChildrenCount</span><span class="o">;</span>
+</span><span class='line'>            <span class="kd">final</span> <span class="n">View</span><span class="o">[]</span> <span class="n">children</span> <span class="o">=</span> <span class="n">mChildren</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">count</span><span class="o">;</span> <span class="n">i</span><span class="o">++)</span> <span class="o">{</span>
+</span><span class='line'>                <span class="kd">final</span> <span class="n">View</span> <span class="n">child</span> <span class="o">=</span> <span class="n">children</span><span class="o">[</span><span class="n">i</span><span class="o">];</span>
+</span><span class='line'>                <span class="k">if</span> <span class="o">((</span><span class="n">child</span><span class="o">.</span><span class="na">mViewFlags</span> <span class="o">&amp;</span> <span class="n">VISIBILITY_MASK</span><span class="o">)</span> <span class="o">==</span> <span class="n">VISIBLE</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                    <span class="n">child</span><span class="o">.</span><span class="na">addFocusables</span><span class="o">(</span><span class="n">views</span><span class="o">,</span> <span class="n">direction</span><span class="o">,</span> <span class="n">focusableMode</span><span class="o">);</span>
+</span><span class='line'>                <span class="o">}</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">if</span> <span class="o">(</span><span class="n">descendantFocusability</span> <span class="o">!=</span> <span class="n">FOCUS_AFTER_DESCENDANTS</span>
+</span><span class='line'>                <span class="c1">// No focusable descendants</span>
+</span><span class='line'>                <span class="o">||</span> <span class="n">focusableCount</span> <span class="o">==</span> <span class="n">views</span><span class="o">.</span><span class="na">size</span><span class="o">())</span> <span class="o">{</span>
+</span><span class='line'>            <span class="kd">super</span><span class="o">.</span><span class="na">addFocusables</span><span class="o">(</span><span class="n">views</span><span class="o">,</span> <span class="n">direction</span><span class="o">,</span> <span class="n">focusableMode</span><span class="o">);</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<blockquote><p>这里涉及到descendantFocusability这个概念，这个变量有三个值，可以在XML中给ViewGroup设置，用来控制后代的焦点行为。</p>
+
+<ol>
+<li>android:descendantFocusability=&ldquo;blocksDescendants&rdquo;   阻止后代获取焦点</li>
+<li>android:descendantFocusability=&ldquo;afterDescendants&rdquo;      如果没有任何一个后代可以获取焦点的时候，再获取焦点</li>
+<li>android:descendantFocusability=&ldquo;beforeDescendants&rdquo;    在后代之前获取焦点</li>
+</ol>
+
+
+<p>这几个属性除了在这里有影响，对ViewGroup的requestFocus方法也有影响：</p>
+
+<pre><code class="java">public boolean requestFocus(int direction, Rect previouslyFocusedRect) {
+        int descendantFocusability = getDescendantFocusability();
+
+        switch (descendantFocusability) {
+            case FOCUS_BLOCK_DESCENDANTS:
+                return super.requestFocus(direction, previouslyFocusedRect);
+            case FOCUS_BEFORE_DESCENDANTS: {
+                final boolean took = super.requestFocus(direction, previouslyFocusedRect);
+                return took ? took : onRequestFocusInDescendants(direction, previouslyFocusedRect);
+            }
+            case FOCUS_AFTER_DESCENDANTS: {
+                final boolean took = onRequestFocusInDescendants(direction, previouslyFocusedRect);
+                return took ? took : super.requestFocus(direction, previouslyFocusedRect);
+            }
+            default:
+                throw new IllegalStateException("descendant focusability must be "
+                        + "one of FOCUS_BEFORE_DESCENDANTS, FOCUS_AFTER_DESCENDANTS, FOCUS_BLOCK_DESCENDANTS "
+                        + "but is " + descendantFocusability);
+        }
+    }
+</code></pre></blockquote>
+
+<p>构建完焦点列表之后：</p>
+
+<p>[@FocusFinder]</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">private</span> <span class="n">View</span> <span class="nf">findNextFocus</span><span class="o">(</span><span class="n">ViewGroup</span> <span class="n">root</span><span class="o">,</span> <span class="n">View</span> <span class="n">focused</span><span class="o">,</span> <span class="n">Rect</span> <span class="n">focusedRect</span><span class="o">,</span>
+</span><span class='line'>            <span class="kt">int</span> <span class="n">direction</span><span class="o">,</span> <span class="n">ArrayList</span><span class="o">&lt;</span><span class="n">View</span><span class="o">&gt;</span> <span class="n">focusables</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="o">(</span><span class="n">focused</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="k">if</span> <span class="o">(</span><span class="n">focusedRect</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                <span class="n">focusedRect</span> <span class="o">=</span> <span class="n">mFocusedRect</span><span class="o">;</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>            <span class="c1">// fill in interesting rect from focused</span>
+</span><span class='line'>            <span class="c1">//获取焦点View的坐标</span>
+</span><span class='line'>            <span class="n">focused</span><span class="o">.</span><span class="na">getFocusedRect</span><span class="o">(</span><span class="n">focusedRect</span><span class="o">);</span>
+</span><span class='line'>              <span class="c1">//将焦点View的坐标转换为root坐标系的坐标</span>
+</span><span class='line'>            <span class="n">root</span><span class="o">.</span><span class="na">offsetDescendantRectToMyCoords</span><span class="o">(</span><span class="n">focused</span><span class="o">,</span> <span class="n">focusedRect</span><span class="o">);</span>
+</span><span class='line'>        <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+</span><span class='line'>              <span class="c1">//省略...</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">switch</span> <span class="o">(</span><span class="n">direction</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="k">case</span> <span class="n">View</span><span class="o">.</span><span class="na">FOCUS_FORWARD</span><span class="o">:</span>
+</span><span class='line'>            <span class="k">case</span> <span class="n">View</span><span class="o">.</span><span class="na">FOCUS_BACKWARD</span><span class="o">:</span>
+</span><span class='line'>                <span class="k">return</span> <span class="nf">findNextFocusInRelativeDirection</span><span class="o">(</span><span class="n">focusables</span><span class="o">,</span> <span class="n">root</span><span class="o">,</span> <span class="n">focused</span><span class="o">,</span> <span class="n">focusedRect</span><span class="o">,</span>
+</span><span class='line'>                        <span class="n">direction</span><span class="o">);</span>
+</span><span class='line'>            <span class="k">case</span> <span class="n">View</span><span class="o">.</span><span class="na">FOCUS_UP</span><span class="o">:</span>
+</span><span class='line'>            <span class="k">case</span> <span class="n">View</span><span class="o">.</span><span class="na">FOCUS_DOWN</span><span class="o">:</span>
+</span><span class='line'>            <span class="k">case</span> <span class="n">View</span><span class="o">.</span><span class="na">FOCUS_LEFT</span><span class="o">:</span>
+</span><span class='line'>            <span class="k">case</span> <span class="n">View</span><span class="o">.</span><span class="na">FOCUS_RIGHT</span><span class="o">:</span>
+</span><span class='line'>                <span class="k">return</span> <span class="nf">findNextFocusInAbsoluteDirection</span><span class="o">(</span><span class="n">focusables</span><span class="o">,</span> <span class="n">root</span><span class="o">,</span> <span class="n">focused</span><span class="o">,</span>
+</span><span class='line'>                        <span class="n">focusedRect</span><span class="o">,</span> <span class="n">direction</span><span class="o">);</span>
+</span><span class='line'>            <span class="k">default</span><span class="o">:</span>
+</span><span class='line'>                <span class="k">throw</span> <span class="k">new</span> <span class="nf">IllegalArgumentException</span><span class="o">(</span><span class="s">&quot;Unknown direction: &quot;</span> <span class="o">+</span> <span class="n">direction</span><span class="o">);</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>    <span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<blockquote><p>ViewGroup中有两个方法用来进行坐标系转换：</p>
+
+<p>1.offsetDescendantRectToMyCoords   将某个后代的坐标系转换到当前ViewGroup的坐标系中</p>
+
+<p>2.offsetRectIntoDescendantCoords      将当前ViewGroup的坐标转换到后代坐标系中</p></blockquote>
+
+<p>这里转换过后，我们获取到了当前焦点的一块矩形区域 focusedRect，用这块区域+按键方向来查找下一个焦点。</p>
+
+<p>[@FocusFinder]</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">View</span> <span class="nf">findNextFocusInAbsoluteDirection</span><span class="o">(</span><span class="n">ArrayList</span><span class="o">&lt;</span><span class="n">View</span><span class="o">&gt;</span> <span class="n">focusables</span><span class="o">,</span> <span class="n">ViewGroup</span> <span class="n">root</span><span class="o">,</span> <span class="n">View</span> <span class="n">focused</span><span class="o">,</span>
+</span><span class='line'>            <span class="n">Rect</span> <span class="n">focusedRect</span><span class="o">,</span> <span class="kt">int</span> <span class="n">direction</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="c1">// initialize the best candidate to something impossible</span>
+</span><span class='line'>        <span class="c1">// (so the first plausible view will become the best choice)</span>
+</span><span class='line'>          <span class="c1">//1.先把把矩形设置成最差的情况，在接下来的匹配中被替换掉。</span>
+</span><span class='line'>        <span class="n">mBestCandidateRect</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="n">focusedRect</span><span class="o">);</span>
+</span><span class='line'>        <span class="k">switch</span><span class="o">(</span><span class="n">direction</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="k">case</span> <span class="n">View</span><span class="o">.</span><span class="na">FOCUS_LEFT</span><span class="o">:</span>
+</span><span class='line'>                <span class="n">mBestCandidateRect</span><span class="o">.</span><span class="na">offset</span><span class="o">(</span><span class="n">focusedRect</span><span class="o">.</span><span class="na">width</span><span class="o">()</span> <span class="o">+</span> <span class="mi">1</span><span class="o">,</span> <span class="mi">0</span><span class="o">);</span>
+</span><span class='line'>                <span class="k">break</span><span class="o">;</span>
+</span><span class='line'>            <span class="k">case</span> <span class="n">View</span><span class="o">.</span><span class="na">FOCUS_RIGHT</span><span class="o">:</span>
+</span><span class='line'>                <span class="n">mBestCandidateRect</span><span class="o">.</span><span class="na">offset</span><span class="o">(-(</span><span class="n">focusedRect</span><span class="o">.</span><span class="na">width</span><span class="o">()</span> <span class="o">+</span> <span class="mi">1</span><span class="o">),</span> <span class="mi">0</span><span class="o">);</span>
+</span><span class='line'>                <span class="k">break</span><span class="o">;</span>
+</span><span class='line'>            <span class="k">case</span> <span class="n">View</span><span class="o">.</span><span class="na">FOCUS_UP</span><span class="o">:</span>
+</span><span class='line'>                <span class="n">mBestCandidateRect</span><span class="o">.</span><span class="na">offset</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="n">focusedRect</span><span class="o">.</span><span class="na">height</span><span class="o">()</span> <span class="o">+</span> <span class="mi">1</span><span class="o">);</span>
+</span><span class='line'>                <span class="k">break</span><span class="o">;</span>
+</span><span class='line'>            <span class="k">case</span> <span class="n">View</span><span class="o">.</span><span class="na">FOCUS_DOWN</span><span class="o">:</span>
+</span><span class='line'>                <span class="n">mBestCandidateRect</span><span class="o">.</span><span class="na">offset</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="o">-(</span><span class="n">focusedRect</span><span class="o">.</span><span class="na">height</span><span class="o">()</span> <span class="o">+</span> <span class="mi">1</span><span class="o">));</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">View</span> <span class="n">closest</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>          <span class="c1">//2.遍历focusables，找到最接近的View</span>
+</span><span class='line'>        <span class="kt">int</span> <span class="n">numFocusables</span> <span class="o">=</span> <span class="n">focusables</span><span class="o">.</span><span class="na">size</span><span class="o">();</span>
+</span><span class='line'>        <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">numFocusables</span><span class="o">;</span> <span class="n">i</span><span class="o">++)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="n">View</span> <span class="n">focusable</span> <span class="o">=</span> <span class="n">focusables</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">i</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="c1">// only interested in other non-root views</span>
+</span><span class='line'>            <span class="k">if</span> <span class="o">(</span><span class="n">focusable</span> <span class="o">==</span> <span class="n">focused</span> <span class="o">||</span> <span class="n">focusable</span> <span class="o">==</span> <span class="n">root</span><span class="o">)</span> <span class="k">continue</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="c1">// get focus bounds of other view in same coordinate system</span>
+</span><span class='line'>            <span class="n">focusable</span><span class="o">.</span><span class="na">getFocusedRect</span><span class="o">(</span><span class="n">mOtherRect</span><span class="o">);</span>
+</span><span class='line'>            <span class="n">root</span><span class="o">.</span><span class="na">offsetDescendantRectToMyCoords</span><span class="o">(</span><span class="n">focusable</span><span class="o">,</span> <span class="n">mOtherRect</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="k">if</span> <span class="o">(</span><span class="n">isBetterCandidate</span><span class="o">(</span><span class="n">direction</span><span class="o">,</span> <span class="n">focusedRect</span><span class="o">,</span> <span class="n">mOtherRect</span><span class="o">,</span> <span class="n">mBestCandidateRect</span><span class="o">))</span> <span class="o">{</span>
+</span><span class='line'>                <span class="n">mBestCandidateRect</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="n">mOtherRect</span><span class="o">);</span>
+</span><span class='line'>                <span class="n">closest</span> <span class="o">=</span> <span class="n">focusable</span><span class="o">;</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">closest</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>遍历focusables列表，利用isBetterCandidate方法找到最合适的View作为下一个焦点:</p>
+
+<p>[@FocusFinder]</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kt">boolean</span> <span class="nf">isBetterCandidate</span><span class="o">(</span><span class="kt">int</span> <span class="n">direction</span><span class="o">,</span> <span class="n">Rect</span> <span class="n">source</span><span class="o">,</span> <span class="n">Rect</span> <span class="n">rect1</span><span class="o">,</span> <span class="n">Rect</span> <span class="n">rect2</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">// to be a better candidate, need to at least be a candidate in the first</span>
+</span><span class='line'>        <span class="c1">// place :)</span>
+</span><span class='line'>        <span class="k">if</span> <span class="o">(!</span><span class="n">isCandidate</span><span class="o">(</span><span class="n">source</span><span class="o">,</span> <span class="n">rect1</span><span class="o">,</span> <span class="n">direction</span><span class="o">))</span> <span class="o">{</span>
+</span><span class='line'>            <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">// we know that rect1 is a candidate.. if rect2 is not a candidate,</span>
+</span><span class='line'>        <span class="c1">// rect1 is better</span>
+</span><span class='line'>        <span class="k">if</span> <span class="o">(!</span><span class="n">isCandidate</span><span class="o">(</span><span class="n">source</span><span class="o">,</span> <span class="n">rect2</span><span class="o">,</span> <span class="n">direction</span><span class="o">))</span> <span class="o">{</span>
+</span><span class='line'>            <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">// if rect1 is better by beam, it wins</span>
+</span><span class='line'>        <span class="k">if</span> <span class="o">(</span><span class="n">beamBeats</span><span class="o">(</span><span class="n">direction</span><span class="o">,</span> <span class="n">source</span><span class="o">,</span> <span class="n">rect1</span><span class="o">,</span> <span class="n">rect2</span><span class="o">))</span> <span class="o">{</span>
+</span><span class='line'>            <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">// if rect2 is better, then rect1 cant&#39; be :)</span>
+</span><span class='line'>        <span class="k">if</span> <span class="o">(</span><span class="n">beamBeats</span><span class="o">(</span><span class="n">direction</span><span class="o">,</span> <span class="n">source</span><span class="o">,</span> <span class="n">rect2</span><span class="o">,</span> <span class="n">rect1</span><span class="o">))</span> <span class="o">{</span>
+</span><span class='line'>            <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">// otherwise, do fudge-tastic comparison of the major and minor axis</span>
+</span><span class='line'>        <span class="k">return</span> <span class="o">(</span><span class="n">getWeightedDistanceFor</span><span class="o">(</span>
+</span><span class='line'>                        <span class="n">majorAxisDistance</span><span class="o">(</span><span class="n">direction</span><span class="o">,</span> <span class="n">source</span><span class="o">,</span> <span class="n">rect1</span><span class="o">),</span>
+</span><span class='line'>                        <span class="n">minorAxisDistance</span><span class="o">(</span><span class="n">direction</span><span class="o">,</span> <span class="n">source</span><span class="o">,</span> <span class="n">rect1</span><span class="o">))</span>
+</span><span class='line'>                <span class="o">&lt;</span> <span class="n">getWeightedDistanceFor</span><span class="o">(</span>
+</span><span class='line'>                        <span class="n">majorAxisDistance</span><span class="o">(</span><span class="n">direction</span><span class="o">,</span> <span class="n">source</span><span class="o">,</span> <span class="n">rect2</span><span class="o">),</span>
+</span><span class='line'>                        <span class="n">minorAxisDistance</span><span class="o">(</span><span class="n">direction</span><span class="o">,</span> <span class="n">source</span><span class="o">,</span> <span class="n">rect2</span><span class="o">)));</span>
+</span><span class='line'>    <span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这里根据direction、sourceRect来比较Rect1和Rect2谁更合适，有兴趣可以看下。</p>
+
+<p>至此，已经找到了下一个要获取焦点的View，在<code>ViewPostImeInputState.processKeyEvent</code>中对focusedView执行<em>requestFocus</em>方法请求焦点，其中会回调<code>onFocusChange</code>等焦点变化方法，并且更新前面提到过的<code>mFocused</code>链。</p>
+
+<p>在整个焦点寻找的过程中，我们可以做以下事情来改变它原来寻焦点的逻辑：</p>
+
+<ul>
+<li>xml中指定left/top/right/down/forward对应的view。</li>
+<li>复写addFocusables方法，根据我们的逻辑来添加候选的focusable views。</li>
+<li>重写focusSearch方法，执行我们的焦点寻找逻辑，返回下一个获取焦点的View。比如RecyclerView就重写了focusSearch方法，将焦点寻找的逻辑交给自己的LayoutManager处理。</li>
+</ul>
+
+
+<h3>相关资料</h3>
+
+<p><a href="http://gityuan.com/2015/09/19/android-touch/">Android触摸事件分发机制</a></p>
+
+<p><a href="https://juejin.im/post/58f8d362ac502e006391bf63">焦点寻址</a></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Android NFC开发入门]]></title>
