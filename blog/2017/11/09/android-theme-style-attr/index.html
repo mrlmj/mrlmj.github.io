@@ -1,0 +1,677 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Android之Theme、Style、Attr - AndroidDev</title>
+  <meta name="author" content="放开那个猴子">
+
+  
+  <meta name="description" content="Android UI开发中经常会涉及到Theme、Style、Attr等概念，熟悉掌握这些概念能够帮助我们快速实现想要的UI效果，另外自定义View也经常需要使用到这些东西。 概念 Attr 属性——基础单元，在Theme/Style/XML文件中作为Key使用，指定相应的value。 定义方式 &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://www.monkeyliu.com/blog/2017/11/09/android-theme-style-attr/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="AndroidDev" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="/javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/favicon.ico" rel="icon">
+<!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/blog">AndroidDev</a></h1>
+  
+    <h2>坚持比完美更重要</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="https://www.google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="sitesearch" value="www.monkeyliu.com">
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/blog">博客</a></li>
+  <li><a href="/blog/archives">归档</a></li>
+  <li><a href="/blog/about.html">关于</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Android之Theme、Style、Attr</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2017-11-09T19:15:01+08:00'><span class='date'><span class='date-month'>Nov</span> <span class='date-day'>9</span><span class='date-suffix'>th</span>, <span class='date-year'>2017</span></span> <span class='time'>7:15 pm</span></time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Android UI开发中经常会涉及到Theme、Style、Attr等概念，熟悉掌握这些概念能够帮助我们快速实现想要的UI效果，另外自定义View也经常需要使用到这些东西。</p>
+
+<!-- more -->
+
+
+<h3>概念</h3>
+
+<ul>
+<li><strong>Attr</strong> 属性——基础单元，在Theme/Style/XML文件中作为Key使用，指定相应的value。</li>
+</ul>
+
+
+<p>定义方式：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;attr</span> <span class="na">name=</span><span class="s">&quot;borderWidth&quot;</span> <span class="na">format=</span><span class="s">&quot;dimen&quot;</span> <span class="nt">/&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>使用方式:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;View</span>
+</span><span class='line'>      <span class="na">android:layout_width=</span><span class="s">&quot;wrap_content&quot;</span>
+</span><span class='line'>      <span class="na">android:layout_height=</span><span class="s">&quot;wrap_content&quot;</span>
+</span><span class='line'>      <span class="na">app:borderWidth=</span><span class="s">&quot;10dp&quot;</span> <span class="nt">/&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>或</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kt">int</span> <span class="n">attr</span> <span class="o">=</span> <span class="n">R</span><span class="o">.</span><span class="na">attr</span><span class="o">.</span><span class="na">borderWidth</span><span class="o">;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>可以将多个关联属性分组管理:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="o">&lt;</span><span class="n">declare</span><span class="o">-</span><span class="n">styleable</span> <span class="n">name</span><span class="o">=</span><span class="s">&quot;MyButton&quot;</span><span class="o">&gt;</span>
+</span><span class='line'>    <span class="o">&lt;</span><span class="n">attr</span> <span class="n">name</span><span class="o">=</span><span class="s">&quot;buttonWidth&quot;</span> <span class="n">format</span><span class="o">=</span><span class="s">&quot;dimension&quot;</span> <span class="o">/&gt;</span>
+</span><span class='line'>    <span class="o">&lt;</span><span class="n">attr</span> <span class="n">name</span><span class="o">=</span><span class="s">&quot;buttonHeight&quot;</span> <span class="n">format</span><span class="o">=</span><span class="s">&quot;dimension&quot;</span> <span class="o">/&gt;</span>
+</span><span class='line'>    <span class="o">&lt;</span><span class="n">attr</span> <span class="n">name</span><span class="o">=</span><span class="s">&quot;buttonColor&quot;</span> <span class="n">format</span><span class="o">=</span><span class="s">&quot;color&quot;</span> <span class="o">/&gt;</span>
+</span><span class='line'><span class="o">&lt;/</span><span class="n">declare</span><span class="o">-</span><span class="n">styleable</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>通过以下方式可以访问到一个属性数组:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kt">int</span><span class="o">[]</span> <span class="n">attrs</span> <span class="o">=</span> <span class="n">R</span><span class="o">.</span><span class="na">styleable</span><span class="o">.</span><span class="na">MyButton</span><span class="o">;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li><strong>Style</strong> 样式集合，将多个属性放在一起，达到复用的目的。</li>
+</ul>
+
+
+<p>例如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;Button</span>
+</span><span class='line'>        <span class="na">android:id=</span><span class="s">&quot;@+id/button&quot;</span>
+</span><span class='line'>        <span class="na">android:layout_width=</span><span class="s">&quot;wrap_content&quot;</span>
+</span><span class='line'>        <span class="na">android:layout_height=</span><span class="s">&quot;wrap_content&quot;</span>
+</span><span class='line'>        <span class="na">android:gravity=</span><span class="s">&quot;center&quot;</span>
+</span><span class='line'>        <span class="na">android:textSize=</span><span class="s">&quot;20sp&quot;</span>
+</span><span class='line'>        <span class="na">android:textColor=</span><span class="s">&quot;#FF000&quot;</span> <span class="nt">/&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>抽离出一些公共的属性作为Style:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;style</span> <span class="na">name=</span><span class="s">&quot;myButtonStyle&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;item</span> <span class="na">name=</span><span class="s">&quot;android:layout_width&quot;</span><span class="nt">&gt;</span>wrap_content<span class="nt">&lt;/item&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;item</span> <span class="na">name=</span><span class="s">&quot;android:layout_height&quot;</span><span class="nt">&gt;</span>wrap_content<span class="nt">&lt;/item&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;item</span> <span class="na">name=</span><span class="s">&quot;android:gravity&quot;</span><span class="nt">&gt;</span>center<span class="nt">&lt;/item&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;item</span> <span class="na">name=</span><span class="s">&quot;android:textColor&quot;</span><span class="nt">&gt;</span>#FF0000<span class="nt">&lt;/item&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;item</span> <span class="na">name=</span><span class="s">&quot;android:textSize&quot;</span><span class="nt">&gt;</span>20sp<span class="nt">&lt;/item&gt;</span>
+</span><span class='line'><span class="nt">&lt;/style&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>引用Style:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;Button</span>
+</span><span class='line'>        <span class="na">android:id=</span><span class="s">&quot;@+id/button&quot;</span>
+</span><span class='line'>        <span class="na">style=</span><span class="s">&quot;@style/myButtonStyle&quot;</span> <span class="nt">/&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li><strong>Theme</strong> 主题，相当于一个大的Style，作用在应用的层次。其中会包含一些Window相关的属性，比如:</li>
+</ul>
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;item</span> <span class="na">name=</span><span class="s">&quot;windowBackground&quot;</span><span class="nt">&gt;</span>?attr/colorBackground<span class="nt">&lt;/item&gt;</span>
+</span><span class='line'><span class="nt">&lt;item</span> <span class="na">name=</span><span class="s">&quot;windowClipToOutline&quot;</span><span class="nt">&gt;</span>true<span class="nt">&lt;/item&gt;</span>
+</span><span class='line'><span class="nt">&lt;item</span> <span class="na">name=</span><span class="s">&quot;windowFrame&quot;</span><span class="nt">&gt;</span>@null<span class="nt">&lt;/item&gt;</span>
+</span><span class='line'><span class="nt">&lt;item</span> <span class="na">name=</span><span class="s">&quot;windowNoTitle&quot;</span><span class="nt">&gt;</span>false<span class="nt">&lt;/item&gt;</span>
+</span><span class='line'><span class="nt">&lt;item</span> <span class="na">name=</span><span class="s">&quot;windowFullscreen&quot;</span><span class="nt">&gt;</span>false<span class="nt">&lt;/item&gt;</span>
+</span><span class='line'><span class="nt">&lt;item</span> <span class="na">name=</span><span class="s">&quot;windowOverscan&quot;</span><span class="nt">&gt;</span>false<span class="nt">&lt;/item&gt;</span>
+</span><span class='line'><span class="nt">&lt;item</span> <span class="na">name=</span><span class="s">&quot;windowIsFloating&quot;</span><span class="nt">&gt;</span>false<span class="nt">&lt;/item&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>一些组件(Dialog，View等）的统一样式，比如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;item</span> <span class="na">name=</span><span class="s">&quot;dialogTheme&quot;</span><span class="nt">&gt;</span>@style/ThemeOverlay.Material.Dialog<span class="nt">&lt;/item&gt;</span>
+</span><span class='line'><span class="nt">&lt;item</span> <span class="na">name=</span><span class="s">&quot;dialogTitleDecorLayout&quot;</span><span class="nt">&gt;</span>@layout/dialog_title_material<span class="nt">&lt;/item&gt;</span>
+</span><span class='line'><span class="nt">&lt;item</span> <span class="na">name=</span><span class="s">&quot;dialogPreferredPadding&quot;</span><span class="nt">&gt;</span>@dimen/dialog_padding_material<span class="nt">&lt;/item&gt;</span>
+</span><span class='line'><span class="nt">&lt;item</span> <span class="na">name=</span><span class="s">&quot;searchViewStyle&quot;</span><span class="nt">&gt;</span>@style/Widget.Material.SearchView<span class="nt">&lt;/item&gt;</span>
+</span><span class='line'><span class="nt">&lt;item</span> <span class="na">name=</span><span class="s">&quot;searchDialogTheme&quot;</span><span class="nt">&gt;</span>@style/Theme.Material.SearchBar<span class="nt">&lt;/item&gt;</span>
+</span><span class='line'><span class="nt">&lt;item</span> <span class="na">name=</span><span class="s">&quot;numberPickerStyle&quot;</span><span class="nt">&gt;</span>@style/Widget.Material.NumberPicker<span class="nt">&lt;/item&gt;</span>
+</span><span class='line'><span class="nt">&lt;item</span> <span class="na">name=</span><span class="s">&quot;calendarViewStyle&quot;</span><span class="nt">&gt;</span>@style/Widget.Material.CalendarView<span class="nt">&lt;/item&gt;</span>
+</span><span class='line'><span class="nt">&lt;item</span> <span class="na">name=</span><span class="s">&quot;timePickerStyle&quot;</span><span class="nt">&gt;</span>@style/Widget.Material.TimePicker<span class="nt">&lt;/item&gt;</span>
+</span><span class='line'><span class="nt">&lt;item</span> <span class="na">name=</span><span class="s">&quot;timePickerDialogTheme&quot;</span><span class="nt">&gt;</span>?attr/dialogTheme<span class="nt">&lt;/item&gt;</span>
+</span><span class='line'><span class="nt">&lt;item</span> <span class="na">name=</span><span class="s">&quot;datePickerStyle&quot;</span><span class="nt">&gt;</span>@style/Widget.Material.DatePicker<span class="nt">&lt;/item&gt;</span>
+</span><span class='line'><span class="nt">&lt;item</span> <span class="na">name=</span><span class="s">&quot;datePickerDialogTheme&quot;</span><span class="nt">&gt;</span>?attr/dialogTheme<span class="nt">&lt;/item&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>主题相当于应用的一套皮肤，这套皮肤制定了各个组件的显示风格，使之具有统一性。我们熟知的有<code>Theme.Holo</code>,<code>Theme.Material</code>等等。</p>
+
+<h3>Style、Theme作用在View上的流程</h3>
+
+<p><strong>问题：</strong>既然使用Style、Theme都可以给View一个样式，那么他们是怎样作用在View上的呢？他们两个的优先级又是怎么样的。</p>
+
+<p>这里说一下优先级，日常的开发中应该都能够得出一个经验：<strong>layout布局文件中属性 > style样式 > Theme主题</strong></p>
+
+<p>拿一个Button举例，如果在布局文件中给Button设置了<code>android:background="XXX"</code> 或者抽离到Style中再应用，那么Button就显示了我们指定的背景。 如果没有设置背景属性，Button仍然是有一个背景的。这个默认背景就是应用到了Theme中的样式，并且对于不同的主题有不同的样式~</p>
+
+<p>然后重点来说一下样式是怎样作用到View上的，对这个过程进行深入的理解。同样拿一个Android的View来举例：<code>TextView</code>，看看它是怎么应用样式的。</p>
+
+<p>[@TextView] 构造方法:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="nf">TextView</span><span class="o">(</span><span class="n">Context</span> <span class="n">context</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="k">this</span><span class="o">(</span><span class="n">context</span><span class="o">,</span> <span class="kc">null</span><span class="o">);</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">public</span> <span class="nf">TextView</span><span class="o">(</span><span class="n">Context</span> <span class="n">context</span><span class="o">,</span> <span class="nd">@Nullable</span> <span class="n">AttributeSet</span> <span class="n">attrs</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="k">this</span><span class="o">(</span><span class="n">context</span><span class="o">,</span> <span class="n">attrs</span><span class="o">,</span> <span class="n">com</span><span class="o">.</span><span class="na">android</span><span class="o">.</span><span class="na">internal</span><span class="o">.</span><span class="na">R</span><span class="o">.</span><span class="na">attr</span><span class="o">.</span><span class="na">textViewStyle</span><span class="o">);</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">public</span> <span class="nf">TextView</span><span class="o">(</span><span class="n">Context</span> <span class="n">context</span><span class="o">,</span> <span class="nd">@Nullable</span> <span class="n">AttributeSet</span> <span class="n">attrs</span><span class="o">,</span> <span class="kt">int</span> <span class="n">defStyleAttr</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="k">this</span><span class="o">(</span><span class="n">context</span><span class="o">,</span> <span class="n">attrs</span><span class="o">,</span> <span class="n">defStyleAttr</span><span class="o">,</span> <span class="mi">0</span><span class="o">);</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="nd">@SuppressWarnings</span><span class="o">(</span><span class="s">&quot;deprecation&quot;</span><span class="o">)</span>
+</span><span class='line'><span class="kd">public</span> <span class="nf">TextView</span><span class="o">(</span><span class="n">Context</span> <span class="n">context</span><span class="o">,</span> <span class="nd">@Nullable</span> <span class="n">AttributeSet</span> <span class="n">attrs</span><span class="o">,</span> <span class="kt">int</span> <span class="n">defStyleAttr</span><span class="o">,</span> <span class="kt">int</span> <span class="n">defStyleRes</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="kd">super</span><span class="o">(</span><span class="n">context</span><span class="o">,</span> <span class="n">attrs</span><span class="o">,</span> <span class="n">defStyleAttr</span><span class="o">,</span> <span class="n">defStyleRes</span><span class="o">);</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>我们继承Android的View来自定义View时，通过会被要求继承四个的构造方法中的一个。对于XML中布局的View，被调用2个参数的构造方法来new一个实例，其中attrs就是布局的属性集，其中包含了这个View的所有样式。</p>
+
+<p>TextView所有的构造函数最终都指向最长参数的构造函数：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="nf">TextView</span><span class="o">(</span><span class="n">Context</span> <span class="n">context</span><span class="o">,</span> <span class="nd">@Nullable</span> <span class="n">AttributeSet</span> <span class="n">attrs</span><span class="o">,</span> <span class="kt">int</span> <span class="n">defStyleAttr</span><span class="o">,</span> <span class="kt">int</span> <span class="n">defStyleRes</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="kd">super</span><span class="o">(</span><span class="n">context</span><span class="o">,</span> <span class="n">attrs</span><span class="o">,</span> <span class="n">defStyleAttr</span><span class="o">,</span> <span class="n">defStyleRes</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="kd">final</span> <span class="n">Resources</span><span class="o">.</span><span class="na">Theme</span> <span class="n">theme</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="na">getTheme</span><span class="o">();</span>
+</span><span class='line'>        <span class="n">TypedArray</span> <span class="n">a</span> <span class="o">=</span> <span class="n">theme</span><span class="o">.</span><span class="na">obtainStyledAttributes</span><span class="o">(</span><span class="n">attrs</span><span class="o">,</span>
+</span><span class='line'>                <span class="n">com</span><span class="o">.</span><span class="na">android</span><span class="o">.</span><span class="na">internal</span><span class="o">.</span><span class="na">R</span><span class="o">.</span><span class="na">styleable</span><span class="o">.</span><span class="na">TextViewAppearance</span><span class="o">,</span> <span class="n">defStyleAttr</span><span class="o">,</span> <span class="n">defStyleRes</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">TypedArray</span> <span class="n">appearance</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+</span><span class='line'>        <span class="kt">int</span> <span class="n">ap</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="na">getResourceId</span><span class="o">(</span>
+</span><span class='line'>                <span class="n">com</span><span class="o">.</span><span class="na">android</span><span class="o">.</span><span class="na">internal</span><span class="o">.</span><span class="na">R</span><span class="o">.</span><span class="na">styleable</span><span class="o">.</span><span class="na">TextViewAppearance_textAppearance</span><span class="o">,</span> <span class="o">-</span><span class="mi">1</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">a</span><span class="o">.</span><span class="na">recycle</span><span class="o">();</span>
+</span><span class='line'>        <span class="k">if</span> <span class="o">(</span><span class="n">ap</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="n">appearance</span> <span class="o">=</span> <span class="n">theme</span><span class="o">.</span><span class="na">obtainStyledAttributes</span><span class="o">(</span>
+</span><span class='line'>                    <span class="n">ap</span><span class="o">,</span> <span class="n">com</span><span class="o">.</span><span class="na">android</span><span class="o">.</span><span class="na">internal</span><span class="o">.</span><span class="na">R</span><span class="o">.</span><span class="na">styleable</span><span class="o">.</span><span class="na">TextAppearance</span><span class="o">);</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>        <span class="k">if</span> <span class="o">(</span><span class="n">appearance</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="kt">int</span> <span class="n">n</span> <span class="o">=</span> <span class="n">appearance</span><span class="o">.</span><span class="na">getIndexCount</span><span class="o">();</span>
+</span><span class='line'>            <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">n</span><span class="o">;</span> <span class="n">i</span><span class="o">++)</span> <span class="o">{</span>
+</span><span class='line'>                <span class="kt">int</span> <span class="n">attr</span> <span class="o">=</span> <span class="n">appearance</span><span class="o">.</span><span class="na">getIndex</span><span class="o">(</span><span class="n">i</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>                <span class="k">switch</span> <span class="o">(</span><span class="n">attr</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                <span class="k">case</span> <span class="n">com</span><span class="o">.</span><span class="na">android</span><span class="o">.</span><span class="na">internal</span><span class="o">.</span><span class="na">R</span><span class="o">.</span><span class="na">styleable</span><span class="o">.</span><span class="na">TextAppearance_textColorHighlight</span><span class="o">:</span>
+</span><span class='line'>                    <span class="n">textColorHighlight</span> <span class="o">=</span> <span class="n">appearance</span><span class="o">.</span><span class="na">getColor</span><span class="o">(</span><span class="n">attr</span><span class="o">,</span> <span class="n">textColorHighlight</span><span class="o">);</span>
+</span><span class='line'>                    <span class="k">break</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>                <span class="k">case</span> <span class="n">com</span><span class="o">.</span><span class="na">android</span><span class="o">.</span><span class="na">internal</span><span class="o">.</span><span class="na">R</span><span class="o">.</span><span class="na">styleable</span><span class="o">.</span><span class="na">TextAppearance_textColor</span><span class="o">:</span>
+</span><span class='line'>                    <span class="n">textColor</span> <span class="o">=</span> <span class="n">appearance</span><span class="o">.</span><span class="na">getColorStateList</span><span class="o">(</span><span class="n">attr</span><span class="o">);</span>
+</span><span class='line'>                    <span class="k">break</span><span class="o">;</span>
+</span><span class='line'>                <span class="c1">//省略大量Case</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="n">appearance</span><span class="o">.</span><span class="na">recycle</span><span class="o">();</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">a</span> <span class="o">=</span> <span class="n">theme</span><span class="o">.</span><span class="na">obtainStyledAttributes</span><span class="o">(</span><span class="n">attrs</span><span class="o">,</span> <span class="n">com</span><span class="o">.</span><span class="na">android</span><span class="o">.</span><span class="na">internal</span><span class="o">.</span><span class="na">R</span><span class="o">.</span><span class="na">styleable</span><span class="o">.</span><span class="na">TextView</span><span class="o">,</span> <span class="n">defStyleAttr</span><span class="o">,</span> <span class="n">defStyleRes</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="kt">int</span> <span class="n">n</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="na">getIndexCount</span><span class="o">();</span>
+</span><span class='line'>        <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">n</span><span class="o">;</span> <span class="n">i</span><span class="o">++)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="kt">int</span> <span class="n">attr</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="na">getIndex</span><span class="o">(</span><span class="n">i</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="k">switch</span> <span class="o">(</span><span class="n">attr</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="k">case</span> <span class="n">com</span><span class="o">.</span><span class="na">android</span><span class="o">.</span><span class="na">internal</span><span class="o">.</span><span class="na">R</span><span class="o">.</span><span class="na">styleable</span><span class="o">.</span><span class="na">TextView_editable</span><span class="o">:</span>
+</span><span class='line'>                <span class="n">editable</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="na">getBoolean</span><span class="o">(</span><span class="n">attr</span><span class="o">,</span> <span class="n">editable</span><span class="o">);</span>
+</span><span class='line'>                <span class="k">break</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="k">case</span> <span class="n">com</span><span class="o">.</span><span class="na">android</span><span class="o">.</span><span class="na">internal</span><span class="o">.</span><span class="na">R</span><span class="o">.</span><span class="na">styleable</span><span class="o">.</span><span class="na">TextView_inputMethod</span><span class="o">:</span>
+</span><span class='line'>                <span class="n">inputMethod</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="na">getText</span><span class="o">(</span><span class="n">attr</span><span class="o">);</span>
+</span><span class='line'>                <span class="k">break</span><span class="o">;</span>
+</span><span class='line'>            <span class="c1">//省略大量Case</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>其中最核心的一个方法是<code>context.obtainStyledAttributes(AttributeSet, int[] attrs, defStyleAttr, defStyleRes)</code>。</p>
+
+<p><strong>AttributeSet</strong> : layout文件中解析出来的属性对象集合，包含我们的样式。</p>
+
+<p><strong>attrs</strong>: 前面讲到的一组相关联的属性集合。<code>com.android.internal.R.styleable.TextView</code> 可在AOSP中查看具体有哪些属性，这里列出一部分：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'> <span class="nt">&lt;declare-styleable</span> <span class="na">name=</span><span class="s">&quot;TextView&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>        <span class="c">&lt;!-- Determines the minimum type that getText() will return.</span>
+</span><span class='line'><span class="c">             The default is &quot;normal&quot;.</span>
+</span><span class='line'><span class="c">             Note that EditText and LogTextBox always return Editable,</span>
+</span><span class='line'><span class="c">             even if you specify something less powerful here. --&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;attr</span> <span class="na">name=</span><span class="s">&quot;bufferType&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>            <span class="c">&lt;!-- Can return any CharSequence, possibly a</span>
+</span><span class='line'><span class="c">             Spanned one if the source text was Spanned. --&gt;</span>
+</span><span class='line'>            <span class="nt">&lt;enum</span> <span class="na">name=</span><span class="s">&quot;normal&quot;</span> <span class="na">value=</span><span class="s">&quot;0&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>            <span class="c">&lt;!-- Can only return Spannable. --&gt;</span>
+</span><span class='line'>            <span class="nt">&lt;enum</span> <span class="na">name=</span><span class="s">&quot;spannable&quot;</span> <span class="na">value=</span><span class="s">&quot;1&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>            <span class="c">&lt;!-- Can only return Spannable and Editable. --&gt;</span>
+</span><span class='line'>            <span class="nt">&lt;enum</span> <span class="na">name=</span><span class="s">&quot;editable&quot;</span> <span class="na">value=</span><span class="s">&quot;2&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;/attr&gt;</span>
+</span><span class='line'>        <span class="c">&lt;!-- Text to display. --&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;attr</span> <span class="na">name=</span><span class="s">&quot;text&quot;</span> <span class="na">format=</span><span class="s">&quot;string&quot;</span> <span class="na">localization=</span><span class="s">&quot;suggested&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>        <span class="c">&lt;!-- Hint text to display when the text is empty. --&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;attr</span> <span class="na">name=</span><span class="s">&quot;hint&quot;</span> <span class="na">format=</span><span class="s">&quot;string&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>        <span class="c">&lt;!-- Text color. --&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;attr</span> <span class="na">name=</span><span class="s">&quot;textColor&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>        <span class="c">&lt;!-- Color of the text selection highlight. --&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;attr</span> <span class="na">name=</span><span class="s">&quot;textColorHighlight&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>        <span class="c">&lt;!-- Color of the hint text. --&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;attr</span> <span class="na">name=</span><span class="s">&quot;textColorHint&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>        <span class="c">&lt;!-- Base text color, typeface, size, and style. --&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;attr</span> <span class="na">name=</span><span class="s">&quot;textAppearance&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>        <span class="c">&lt;!-- Size of the text. Recommended dimension type for text is &quot;sp&quot; for scaled-pixels (example: 15sp). --&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;attr</span> <span class="na">name=</span><span class="s">&quot;textSize&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>        <span class="c">&lt;!-- Sets the horizontal scaling factor for the text. --&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;attr</span> <span class="na">name=</span><span class="s">&quot;textScaleX&quot;</span> <span class="na">format=</span><span class="s">&quot;float&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>
+</span><span class='line'>   <span class="c">&lt;!--省略不少--&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><strong>defStyleAttr</strong> ： 一个指定的属性资源。在这里为 <code>com.android.internal.R.attr.textViewStyle</code>（2个参数的构造方法传进来的）。可以在<strong>Theme</strong>中找到此属性对应的值，对应了一个Style.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;item</span> <span class="na">name=</span><span class="s">&quot;textViewStyle&quot;</span><span class="nt">&gt;</span>@style/Widget.Material.Light.TextView<span class="nt">&lt;/item&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><strong>defStyleRes</strong>:  Style资源，也是一组样式。</p>
+
+<p>以上，<code>context.obtainStyledAttributes</code>  获取View样式的过程为：</p>
+
+<ol>
+<li><p>从AttributeSet样式集合中寻找<code>int[] attrs</code>指定的几个属性对应的值。例如：xml中指定了<code>android:textColor="#ff0000"</code>， attrs属性组中定义有<code>textColor</code>这个属性，则提取出来。</p></li>
+<li><p>如果AttributeSet中没有要提取的样式（比如，以上没有指定textColor样式），则根据<strong>defStyleAttr</strong>来从指定的<strong>Theme</strong>中寻找样式。比如：Material主题中指定了:</p></li>
+</ol>
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;item</span> <span class="na">name=</span><span class="s">&quot;textViewStyle&quot;</span><span class="nt">&gt;</span>@style/Widget.Material.Light.TextView<span class="nt">&lt;/item&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>则进一步去<code>@style/Widget.Material.Light.TextView</code> 中寻找想要的样式。</p>
+
+<ol>
+<li>如果主题中仍然找不到要提取的样式。 则去<strong>defStyleRes</strong>(我们指定的Style样式中)寻找。</li>
+</ol>
+
+
+<h3>另外</h3>
+
+<p>经过上面的分析，已经可以知道Theme是怎样应用默认样式到View上的了，因此我们就可以修改这种默认样式来定制我们自己的主题。比如我们想让默认的Button控件字体为30sp。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;style</span> <span class="na">name=</span><span class="s">&quot;CustomTheme&quot;</span> <span class="na">parent=</span><span class="s">&quot;@android:style/Theme.Material&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;item</span> <span class="na">name=</span><span class="s">&quot;android:buttonStyle&quot;</span><span class="nt">&gt;</span>@style/CustomButtonStyle<span class="nt">&lt;/item&gt;</span>
+</span><span class='line'><span class="nt">&lt;/style&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="nt">&lt;style</span> <span class="na">name=</span><span class="s">&quot;CustomButtonStyle&quot;</span> <span class="na">parent=</span><span class="s">&quot;@android:style/Widget.Button&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;item</span> <span class="na">name=</span><span class="s">&quot;android:textSize&quot;</span><span class="nt">&gt;</span>30sp<span class="nt">&lt;/item&gt;</span>
+</span><span class='line'><span class="nt">&lt;/style&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>首先，自定义<strong>CustomTheme</strong>继承Andorid的Theme，复写<strong>buttonStyle</strong>指向我们自定义的样式。</p>
+
+<p>其次，定义我们自己的Button样式，可以继承原来的样式，复写textSize属性，来修改默认的Button字体大小。</p>
+
+<h3>再另外</h3>
+
+<p>前面提到<strong>Theme</strong>中会有一些Window的样式，我们可以复写来实现一些window的效果.比如</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;style</span> <span class="na">name=</span><span class="s">&quot;CustomTheme&quot;</span> <span class="na">parent=</span><span class="s">&quot;@android:style/Theme.Material&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>   <span class="nt">&lt;item</span> <span class="na">name=</span><span class="s">&quot;android:windowFullscreen&quot;</span><span class="nt">&gt;</span>true<span class="nt">&lt;/item&gt;</span> <span class="c">&lt;!--全屏--&gt;</span>
+</span><span class='line'>   <span class="nt">&lt;item</span> <span class="na">name=</span><span class="s">&quot;android:statusBarColor&quot;</span><span class="nt">&gt;</span>#FF0000<span class="nt">&lt;/item&gt;</span> <span class="c">&lt;!--修改状态栏的颜色--&gt;</span>
+</span><span class='line'>   <span class="nt">&lt;item</span> <span class="na">name=</span><span class="s">&quot;windowNoTitle&quot;</span><span class="nt">&gt;</span>false<span class="nt">&lt;/item&gt;</span> <span class="c">&lt;!--无标题--&gt;</span>
+</span><span class='line'><span class="nt">&lt;/style&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这些属性在PhoneWindow的generateLayout方法中被解析和应用。</p>
+
+<h3>相关资料</h3>
+
+<ul>
+<li>Android源码分析</li>
+<li><a href="http://www.jianshu.com/p/d147608dc27b">Android沉浸状态栏的实现</a></li>
+</ul>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">放开那个猴子</span></span>
+
+      
+
+
+
+
+<time class='entry-date' datetime='2017-11-09T19:15:01+08:00'><span class='date'><span class='date-month'>Nov</span> <span class='date-day'>9</span><span class='date-suffix'>th</span>, <span class='date-year'>2017</span></span> <span class='time'>7:15 pm</span></time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/android/'>android</a>, <a class='category' href='/blog/categories/attr/'>attr</a>, <a class='category' href='/blog/categories/style/'>style,</a>, <a class='category' href='/blog/categories/theme/'>theme,</a>, <a class='category' href='/blog/categories/ui/'>ui,</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://www.monkeyliu.com/blog/2017/11/09/android-theme-style-attr/" data-via="" data-counturl="http://www.monkeyliu.com/blog/2017/11/09/android-theme-style-attr/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2017/10/23/keyevent-dispatch/" title="Previous Post: Android按键事件分发机制">&laquo; Android按键事件分发机制</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2017/11/09/android-theme-style-attr/">Android之Theme、Style、Attr</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/10/23/keyevent-dispatch/">Android按键事件分发机制</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2017/02/28/androidnfc/">Android NFC开发入门</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2016/08/08/handler/">Android的消息机制-Handler</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2016/06/17/touchevent/">Android事件分发机制</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2017 - 放开那个猴子 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

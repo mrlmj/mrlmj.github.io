@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 <url>
+<loc>http://www.monkeyliu.com/blog/2017/11/09/android-theme-style-attr/</loc>
+<lastmod>2017-11-09T19:15:01+08:00</lastmod>
+</url>
+<url>
 <loc>http://www.monkeyliu.com/blog/2017/10/23/keyevent-dispatch/</loc>
 <lastmod>2017-10-23T06:51:09+08:00</lastmod>
 </url>
@@ -43,5 +47,20 @@
 </url>
 <url>
 <loc>http://www.monkeyliu.com/blog/categories/an-jian-shi-jian-fen-fa/</loc>
+</url>
+<url>
+<loc>http://www.monkeyliu.com/blog/categories/android/</loc>
+</url>
+<url>
+<loc>http://www.monkeyliu.com/blog/categories/ui/</loc>
+</url>
+<url>
+<loc>http://www.monkeyliu.com/blog/categories/theme/</loc>
+</url>
+<url>
+<loc>http://www.monkeyliu.com/blog/categories/style/</loc>
+</url>
+<url>
+<loc>http://www.monkeyliu.com/blog/categories/attr/</loc>
 </url>
 </urlset>
