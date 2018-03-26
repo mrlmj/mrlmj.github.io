@@ -9,7 +9,7 @@
   <meta name="author" content="放开那个猴子">
 
   
-  <meta name="description" content="Android UI开发中经常会涉及到Theme、Style、Attr等概念，熟悉掌握这些概念能够帮助我们快速实现想要的UI效果，另外自定义View也经常需要使用到这些东西。 ">
+  <meta name="description" content="最近在了解OTA升级方面的东西，学习的过程中，对Android的启动流程产生了很大的兴趣，很好奇为什么调用了RecoverySystem#installPackage方法之后手机重启就自动进入升级界面开始升级？Android整个系统的启动流程到底是怎样的（之前只是有过简单的了解）。 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -67,6 +67,42 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2018/03/24/android-boot/">Andorid启动流程探索</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+<time class='entry-date' datetime='2018-03-24T09:48:26+08:00'><span class='date'><span class='date-month'>Mar</span> <span class='date-day'>24</span><span class='date-suffix'>th</span>, <span class='date-year'>2018</span></span> <span class='time'>9:48 am</span></time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>最近在了解OTA升级方面的东西，学习的过程中，对Android的启动流程产生了很大的兴趣，很好奇为什么调用了<code>RecoverySystem#installPackage</code>方法之后手机重启就自动进入升级界面开始升级？Android整个系统的启动流程到底是怎样的（之前只是有过简单的了解）。加上之前对bootloader、recovery等概念比较模糊，刷机的时候一般也都是按照网上的方法做，很不程序员，于是打算把这些东西梳理一下。</p>
+
+<p>本篇文章主要是探索Android手机启动的流程，包括正常的模式（按下电源键到系统正常启动的整个流程）和一些其他的模式（比如进入recovery升级、线刷等）。掌握之后刷机就不用再去各种找教程，直接拿到刷机包一顿操作就行。</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2018/03/24/android-boot/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -168,7 +204,7 @@
       
   <header>
     
-      <h1 class="entry-title"><a href="/blog/2017/02/28/androidnfc/">Android NFC开发入门</a></h1>
+      <h1 class="entry-title"><a href="/blog/2017/02/28/androidnfc/">Androidnfc</a></h1>
     
     
       <p class="meta">
@@ -177,7 +213,7 @@
 
 
 
-<time class='entry-date' datetime='2017-02-28T13:08:50+08:00'><span class='date'><span class='date-month'>Feb</span> <span class='date-day'>28</span><span class='date-suffix'>th</span>, <span class='date-year'>2017</span></span> <span class='time'>1:08 pm</span></time>
+<time class='entry-date' datetime='2017-02-28T00:00:00+08:00'><span class='date'><span class='date-month'>Feb</span> <span class='date-day'>28</span><span class='date-suffix'>th</span>, <span class='date-year'>2017</span></span> <span class='time'>12:00 am</span></time>
         
       </p>
     
@@ -246,7 +282,7 @@
       
   <header>
     
-      <h1 class="entry-title"><a href="/blog/2016/06/17/touchevent/">Android事件分发机制</a></h1>
+      <h1 class="entry-title"><a href="/blog/2016/06/17/touchevent/">Touchevent</a></h1>
     
     
       <p class="meta">
@@ -255,7 +291,7 @@
 
 
 
-<time class='entry-date' datetime='2016-06-17T11:31:09+08:00'><span class='date'><span class='date-month'>Jun</span> <span class='date-day'>17</span><span class='date-suffix'>th</span>, <span class='date-year'>2016</span></span> <span class='time'>11:31 am</span></time>
+<time class='entry-date' datetime='2016-06-17T00:00:00+08:00'><span class='date'><span class='date-month'>Jun</span> <span class='date-day'>17</span><span class='date-suffix'>th</span>, <span class='date-year'>2016</span></span> <span class='time'>12:00 am</span></time>
         
       </p>
     
@@ -280,7 +316,7 @@
       
   <header>
     
-      <h1 class="entry-title"><a href="/blog/2016/03/07/androidthreadpool/">线程池的使用总结</a></h1>
+      <h1 class="entry-title"><a href="/blog/2016/03/07/androidthreadpool/">Androidthreadpool</a></h1>
     
     
       <p class="meta">
@@ -289,7 +325,7 @@
 
 
 
-<time class='entry-date' datetime='2016-03-07T20:08:50+08:00'><span class='date'><span class='date-month'>Mar</span> <span class='date-day'>7</span><span class='date-suffix'>th</span>, <span class='date-year'>2016</span></span> <span class='time'>8:08 pm</span></time>
+<time class='entry-date' datetime='2016-03-07T00:00:00+08:00'><span class='date'><span class='date-month'>Mar</span> <span class='date-day'>7</span><span class='date-suffix'>th</span>, <span class='date-year'>2016</span></span> <span class='time'>12:00 am</span></time>
         
       </p>
     
@@ -330,6 +366,10 @@
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2018/03/24/android-boot/">Andorid启动流程探索</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2017/11/09/android-theme-style-attr/">Android之Theme、Style、Attr</a>
       </li>
     
@@ -338,15 +378,11 @@
       </li>
     
       <li class="post">
-        <a href="/blog/2017/02/28/androidnfc/">Android NFC开发入门</a>
+        <a href="/blog/2017/02/28/androidnfc/">Androidnfc</a>
       </li>
     
       <li class="post">
         <a href="/blog/2016/08/08/handler/">Android的消息机制-Handler</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2016/06/17/touchevent/">Android事件分发机制</a>
       </li>
     
   </ul>
@@ -362,7 +398,7 @@
     </div>
   </div>
   <footer role="contentinfo"><p>
-  Copyright &copy; 2017 - 放开那个猴子 -
+  Copyright &copy; 2018 - 放开那个猴子 -
   <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
 </p>
 
