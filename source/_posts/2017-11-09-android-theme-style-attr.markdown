@@ -3,7 +3,7 @@ layout: post
 title: "Android之Theme、Style、Attr"
 date: 2017-11-09 19:15:01 +0800
 comments: true
-categories: Android UI, Theme, Style, Attr
+categories: Android UI Theme Style Attr
 ---
 
 

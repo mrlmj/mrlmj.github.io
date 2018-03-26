@@ -3,7 +3,7 @@ layout: post
 title: "Android按键事件分发机制"
 date: 2017-10-23 06:51:09 +0800
 comments: true
-categories: Android, KeyEvent, 按键事件分发
+categories: Android KeyEvent 按键事件分发
 ---
 
 

@@ -3,7 +3,7 @@ layout: post
 title: "Android NFC开发入门"
 date: 2017-02-28 13:08:50 +0800
 comments: true
-categories:
+categories:NFC
 ---
 
 
