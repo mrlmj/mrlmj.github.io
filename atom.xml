@@ -4,7 +4,7 @@
   <title><![CDATA[AndroidDev]]></title>
   <link href="http://www.monkeyliu.com/atom.xml" rel="self"/>
   <link href="http://www.monkeyliu.com/"/>
-  <updated>2018-03-26T11:32:57+08:00</updated>
+  <updated>2018-03-29T12:39:07+08:00</updated>
   <id>http://www.monkeyliu.com/</id>
   <author>
     <name><![CDATA[放开那个猴子]]></name>
@@ -2076,9 +2076,9 @@
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[Androidnfc]]></title>
+    <title type="html"><![CDATA[Android NFC开发入门]]></title>
     <link href="http://www.monkeyliu.com/blog/2017/02/28/androidnfc/"/>
-    <updated>2017-02-28T00:00:00+08:00</updated>
+    <updated>2017-02-28T13:08:50+08:00</updated>
     <id>http://www.monkeyliu.com/blog/2017/02/28/androidnfc</id>
     <content type="html"><![CDATA[<h2>NFC的几个概念</h2>
 
