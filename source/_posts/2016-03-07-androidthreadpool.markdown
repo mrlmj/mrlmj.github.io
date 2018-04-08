@@ -3,7 +3,7 @@ layout: post
 title: "线程池的使用总结"
 date: 2016-03-07 20:08:50 +0800
 comments: true
-categories:线程 线程池
+categories: 线程 线程池
 ---
 
 本博文是对Java线程池使用的一篇总结，系统记录下线程池的用法：

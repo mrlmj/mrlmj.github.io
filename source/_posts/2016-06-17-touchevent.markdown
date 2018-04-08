@@ -3,7 +3,7 @@ layout: post
 title: Android事件分发机制
 date: 2016-06-17 11:31:09 +0800
 comments: true
-categories:TouchEvent 事件分发
+categories: TouchEvent 事件分发
 ---
 
 之前看过几遍Android的事件分发流程，每次都以为看的差不多了，可过了一段时间印象又淡了，说到底还是知识掌握的不扎实，不够系统，只了解了皮毛。所以，本文对Android的事件分发机制进行系统总结，避免遗忘。结合android源码，参考《Android开发艺术探索》一书和相关博文。
