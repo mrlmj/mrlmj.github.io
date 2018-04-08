@@ -4,7 +4,7 @@
   <title><![CDATA[AndroidDev]]></title>
   <link href="http://www.monkeyliu.com/atom.xml" rel="self"/>
   <link href="http://www.monkeyliu.com/"/>
-  <updated>2018-03-29T12:39:07+08:00</updated>
+  <updated>2018-04-08T22:14:01+08:00</updated>
   <id>http://www.monkeyliu.com/</id>
   <author>
     <name><![CDATA[放开那个猴子]]></name>
@@ -12,6 +12,385 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[路径动画的实现方案]]></title>
+    <link href="http://www.monkeyliu.com/blog/2018/04/08/path-tracing/"/>
+    <updated>2018-04-08T20:10:38+08:00</updated>
+    <id>http://www.monkeyliu.com/blog/2018/04/08/path-tracing</id>
+    <content type="html"><![CDATA[<p>UI开发中有时会遇到这样的效果</p>
+
+<p><img src="http://www.monkeyliu.com/images/articles/path_tracing.gif" alt="path tracing" /></p>
+
+<p>（重点看对号√的动画实现）</p>
+
+<p>这篇文章就总结下，如何实现这样的一个UI动效。</p>
+
+<!-- more -->
+
+
+<h3>基本分析</h3>
+
+<p>我们都知道，使用Android的Path Api可以很容易地画出一个对号（或者任意其他的不规则图形），实现这个效果的难点在于怎么以动画的形式逐渐地把这个路径给绘制出来。这里把路径(Path)从0到1绘制出来的过程称之为路径追踪（Path Tracing).</p>
+
+<p>[@Path的绘制API]</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="c1">//构造任意一个path</span>
+</span><span class='line'><span class="n">Path</span> <span class="n">path</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">Path</span><span class="o">();</span>
+</span><span class='line'><span class="n">path</span><span class="o">.</span><span class="na">moveTo</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="mi">0</span><span class="o">);</span>
+</span><span class='line'><span class="n">path</span><span class="o">.</span><span class="na">lineTo</span><span class="o">(</span><span class="mi">100</span><span class="o">,</span><span class="mi">100</span><span class="o">);</span>
+</span><span class='line'><span class="n">path</span><span class="o">.</span><span class="na">lineTo</span><span class="o">(</span><span class="mi">100</span><span class="o">,</span> <span class="mi">200</span><span class="o">);</span>
+</span><span class='line'><span class="c1">//画出path</span>
+</span><span class='line'><span class="n">cavas</span><span class="o">.</span><span class="na">drawPath</span><span class="o">(</span><span class="n">path</span><span class="o">,</span> <span class="n">paint</span><span class="o">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>实现方案一（PathMeasure)</h3>
+
+<p>Android提供了PathMeasure类，用来进行路径的计算，可以用来实现路径追踪。</p>
+
+<p>创建PathMeasure：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">PathMeasure</span> <span class="n">pathMeasure</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">PathMeasure</span><span class="o">(</span><span class="n">Path</span> <span class="n">path</span><span class="o">,</span> <span class="kt">boolean</span> <span class="n">forceClosed</span><span class="o">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>或者也可以使用无参构造函数:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">PathMeasure</span> <span class="n">pathMeasure</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">PathMeasure</span><span class="o">();</span>
+</span><span class='line'><span class="n">pathMeasure</span><span class="o">.</span><span class="na">setPath</span><span class="o">(</span><span class="n">Path</span> <span class="n">path</span><span class="o">,</span> <span class="kt">boolean</span> <span class="n">forceClosed</span><span class="o">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>第一个参数传入需要进行计算的路径，第二个参数指示是否将路径闭合。</p>
+
+<p>几个有用的API</p>
+
+<ol>
+<li>获取路径的像素长度：</li>
+</ol>
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">pathMeasure</span><span class="o">.</span><span class="na">getLength</span><span class="o">();</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ol>
+<li>获取路径的片段：</li>
+</ol>
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">pathMeasure</span><span class="o">.</span><span class="na">getSegment</span><span class="o">(</span><span class="kt">float</span> <span class="n">startD</span><span class="o">,</span> <span class="kt">float</span> <span class="n">stopD</span><span class="o">,</span> <span class="n">Path</span> <span class="n">dst</span><span class="o">,</span> <span class="kt">boolean</span> <span class="n">startWithMoveTo</span><span class="o">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这个方法是绘制路径追踪动画的核心方法，通过这个方法可以获取整个Path你想要的片段，<strong>保持起点不变，终点一点点变长</strong>，就可以将路径一点一点地绘制出来了。</p>
+
+<p><em>参数介绍</em>：</p>
+
+<ul>
+<li>startD和stopD：开始距离和结束距离，控制截取的Path的内容。</li>
+<li>dst:将截取的路径保存到这个Path中，之后绘制这个Path即可。</li>
+<li>startWithMoveTo: 通常为true，表示对dst path先调用moveTo移动到起点的位置。</li>
+</ul>
+
+
+<p>相当于</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">dst</span><span class="o">.</span><span class="na">moveTo</span><span class="o">(</span><span class="n">起点</span><span class="o">);</span>
+</span><span class='line'><span class="n">dst</span><span class="o">.</span><span class="na">lineTo</span><span class="o">(</span><span class="n">终点</span><span class="o">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>如果设为false，经过测试，相当于:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">dst</span><span class="o">.</span><span class="na">lineTo</span><span class="o">(</span><span class="n">起点</span><span class="o">);</span>
+</span><span class='line'><span class="n">dst</span><span class="o">.</span><span class="na">lineTo</span><span class="o">(</span><span class="n">终点</span><span class="o">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>一个Path如果直接lineTo某个点，隐式地在最开始添加了一个moveTo(0,0)，这种情况下获取的Path实际上起点连接到了(0,0)点。</p>
+
+<p>使用上面两个API，结合属性动画，实现路径追踪的效果：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">RouteTraceView</span> <span class="kd">extends</span> <span class="n">View</span> <span class="o">{</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">private</span> <span class="n">Path</span> <span class="n">mDstPath</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">Path</span><span class="o">();</span>
+</span><span class='line'>    <span class="kd">private</span> <span class="kt">float</span> <span class="n">mEndDistance</span><span class="o">;</span>
+</span><span class='line'>    <span class="kd">private</span> <span class="n">PathMeasure</span> <span class="n">mPathMeasure</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">private</span> <span class="n">Paint</span> <span class="n">mPaint</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">public</span> <span class="nf">RouteTraceView</span><span class="o">(</span><span class="n">Context</span> <span class="n">context</span><span class="o">,</span> <span class="nd">@Nullable</span> <span class="n">AttributeSet</span> <span class="n">attrs</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="kd">super</span><span class="o">(</span><span class="n">context</span><span class="o">,</span> <span class="n">attrs</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">init</span><span class="o">();</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">private</span> <span class="kt">void</span> <span class="nf">init</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">mPaint</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">Paint</span><span class="o">(</span><span class="n">Paint</span><span class="o">.</span><span class="na">ANTI_ALIAS_FLAG</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">mPaint</span><span class="o">.</span><span class="na">setColor</span><span class="o">(</span><span class="n">Color</span><span class="o">.</span><span class="na">RED</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">mPaint</span><span class="o">.</span><span class="na">setStyle</span><span class="o">(</span><span class="n">Paint</span><span class="o">.</span><span class="na">Style</span><span class="o">.</span><span class="na">STROKE</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">mPaint</span><span class="o">.</span><span class="na">setStrokeWidth</span><span class="o">(</span><span class="mi">10</span><span class="o">);</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@Override</span>
+</span><span class='line'>    <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onDraw</span><span class="o">(</span><span class="n">Canvas</span> <span class="n">canvas</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="kd">super</span><span class="o">.</span><span class="na">onDraw</span><span class="o">(</span><span class="n">canvas</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">mDstPath</span><span class="o">.</span><span class="na">reset</span><span class="o">();</span>
+</span><span class='line'>        <span class="n">mDstPath</span><span class="o">.</span><span class="na">lineTo</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="mi">0</span><span class="o">);</span> <span class="c1">//这样据说是因为硬件加速的bug，但是我去掉也没发现什么问题</span>
+</span><span class='line'>        <span class="n">mPathMeasure</span><span class="o">.</span><span class="na">getSegment</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="n">mEndDistance</span><span class="o">,</span> <span class="n">mDstPath</span><span class="o">,</span> <span class="kc">false</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">canvas</span><span class="o">.</span><span class="na">drawPath</span><span class="o">(</span><span class="n">mDstPath</span><span class="o">,</span> <span class="n">mPaint</span><span class="o">);</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@Override</span>
+</span><span class='line'>    <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onSizeChanged</span><span class="o">(</span><span class="kt">int</span> <span class="n">w</span><span class="o">,</span> <span class="kt">int</span> <span class="n">h</span><span class="o">,</span> <span class="kt">int</span> <span class="n">oldw</span><span class="o">,</span> <span class="kt">int</span> <span class="n">oldh</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="kd">super</span><span class="o">.</span><span class="na">onSizeChanged</span><span class="o">(</span><span class="n">w</span><span class="o">,</span> <span class="n">h</span><span class="o">,</span> <span class="n">oldw</span><span class="o">,</span> <span class="n">oldh</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">//要动态绘制出来的路径</span>
+</span><span class='line'>        <span class="n">Path</span> <span class="n">path</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">Path</span><span class="o">();</span>
+</span><span class='line'>        <span class="n">path</span><span class="o">.</span><span class="na">moveTo</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="mi">50</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">path</span><span class="o">.</span><span class="na">lineTo</span><span class="o">(</span><span class="mi">100</span><span class="o">,</span> <span class="mi">100</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">path</span><span class="o">.</span><span class="na">lineTo</span><span class="o">(</span><span class="mi">100</span><span class="o">,</span> <span class="mi">200</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">mPathMeasure</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">PathMeasure</span><span class="o">();</span>
+</span><span class='line'>        <span class="n">mPathMeasure</span><span class="o">.</span><span class="na">setPath</span><span class="o">(</span><span class="n">path</span><span class="o">,</span> <span class="kc">false</span><span class="o">);</span>
+</span><span class='line'>        <span class="kd">final</span> <span class="kt">float</span> <span class="n">length</span> <span class="o">=</span> <span class="n">mPathMeasure</span><span class="o">.</span><span class="na">getLength</span><span class="o">();</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">ValueAnimator</span> <span class="n">valueAnimator</span> <span class="o">=</span> <span class="n">ValueAnimator</span><span class="o">.</span><span class="na">ofFloat</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="mi">1</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">valueAnimator</span><span class="o">.</span><span class="na">setDuration</span><span class="o">(</span><span class="mi">3000</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">valueAnimator</span><span class="o">.</span><span class="na">addUpdateListener</span><span class="o">(</span><span class="k">new</span> <span class="n">ValueAnimator</span><span class="o">.</span><span class="na">AnimatorUpdateListener</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>            <span class="nd">@Override</span>
+</span><span class='line'>            <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onAnimationUpdate</span><span class="o">(</span><span class="n">ValueAnimator</span> <span class="n">animation</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                <span class="c1">//动画的形式改变终点的距离</span>
+</span><span class='line'>                <span class="n">mEndDistance</span> <span class="o">=</span> <span class="o">(</span><span class="kt">float</span><span class="o">)</span> <span class="n">animation</span><span class="o">.</span><span class="na">getAnimatedValue</span><span class="o">()</span> <span class="o">*</span> <span class="n">length</span><span class="o">;</span>
+</span><span class='line'>                <span class="n">invalidate</span><span class="o">();</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>        <span class="o">});</span>
+</span><span class='line'>        <span class="n">valueAnimator</span><span class="o">.</span><span class="na">start</span><span class="o">();</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>是不是很简单，对于任意一个Path，都能通过这种改变终点距离的方式，一点点地追踪出来~</p>
+
+<h3>实现方案二（DashPathEffect）</h3>
+
+<p>这种方式比较黑科技，算是奇技淫巧，用起来也是十分方便。</p>
+
+<p>Paint画笔有这样一个方法:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">mPaint</span><span class="o">.</span><span class="na">setPathEffect</span><span class="o">(</span><span class="n">PathEffect</span> <span class="n">effect</span><span class="o">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>用来给画出的路径添加bling bling的特效。</p>
+
+<h5>PathEffect的实现类有以下几个：</h5>
+
+<ul>
+<li>CornerPathEffect</li>
+</ul>
+
+
+<p><img src="http://www.monkeyliu.com/images/articles/path_affect_0.jpg" alt="corner" /></p>
+
+<ul>
+<li>DecretePathEffect  随机偏移的乱七八糟的效果</li>
+</ul>
+
+
+<p><img src="http://www.monkeyliu.com/images/articles/path_affect_1.jpg" alt="decrete" /></p>
+
+<ul>
+<li>DashPathEffect</li>
+</ul>
+
+
+<p><img src="http://www.monkeyliu.com/images/articles/path_affect_2.jpg" alt="dash" /></p>
+
+<ul>
+<li><p>PathDashPathEffect  用某个Path来绘制虚线</p>
+
+<p><img src="http://www.monkeyliu.com/images/articles/path_affect_3.jpg" alt="path dash" /></p></li>
+<li><p>SumPathEffect  组合两种Effect，分别按照两种PathEffect对路径进行绘制</p>
+
+<p><img src="http://www.monkeyliu.com/images/articles/path_affect_4.jpg" alt="corner" /></p></li>
+<li><p>ComposePathEffect 组合两种Effect，先对目标路径应用第一个Effect，对改变后的Path再应用第二个Effect</p>
+
+<p><img src="http://www.monkeyliu.com/images/articles/path_affect_5.jpg" alt="corner" /></p></li>
+</ul>
+
+
+<p>那这些PathEffect跟要实现的路径追踪有半毛钱关系吗？？？</p>
+
+<p>Too young too simple！看我是怎么用DashPathEffect来装逼的！</p>
+
+<h5>先来具体看一下DashPathEffect的构造方法：</h5>
+
+<p>[@DashPathEffect构造方法]</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="nf">DashPathEffect</span><span class="o">(</span><span class="kt">float</span> <span class="n">intervals</span><span class="o">[],</span> <span class="kt">float</span> <span class="n">phase</span><span class="o">){}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li>intervals是一个数组，它的大小必须为偶数，最少两个。其中的元素按照【画线长度，空白长度，画线长度，空白长度….】排列。</li>
+</ul>
+
+
+<p>比如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">PathEffect</span> <span class="n">pathEffect</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">DashPathEffect</span><span class="o">(</span><span class="k">new</span> <span class="kt">float</span><span class="o">[]{</span><span class="mi">20</span><span class="o">,</span> <span class="mi">10</span><span class="o">,</span> <span class="mi">5</span><span class="o">,</span> <span class="mi">10</span><span class="o">},</span> <span class="mi">0</span><span class="o">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>就表示在路径上先画20px的线，再画10px的空白，再画5px的线，再画10px的空白，再循环以此类推。</p>
+
+<ul>
+<li>phase表示相位的偏移，经过测试<strong>phase为正时，虚线整体向起点方向偏移</strong>，比如上述代码中offset如果为20,则我们先看到的则是10px的空白了~</li>
+</ul>
+
+
+<p><strong>黑科技马上要来了！</strong></p>
+
+<p>思考下面这种写法：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="c1">//要动态绘制出来的路径</span>
+</span><span class='line'><span class="n">Path</span> <span class="n">path</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">Path</span><span class="o">();</span>
+</span><span class='line'><span class="n">path</span><span class="o">.</span><span class="na">moveTo</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="mi">50</span><span class="o">);</span>
+</span><span class='line'><span class="n">path</span><span class="o">.</span><span class="na">lineTo</span><span class="o">(</span><span class="mi">100</span><span class="o">,</span> <span class="mi">100</span><span class="o">);</span>
+</span><span class='line'><span class="n">path</span><span class="o">.</span><span class="na">lineTo</span><span class="o">(</span><span class="mi">100</span><span class="o">,</span> <span class="mi">200</span><span class="o">);</span>
+</span><span class='line'><span class="c1">//拿到Path的长度</span>
+</span><span class='line'><span class="n">PathMeasure</span> <span class="n">pathMeasure</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">PathMeasure</span><span class="o">();</span>
+</span><span class='line'><span class="n">pathMeasure</span><span class="o">.</span><span class="na">setPath</span><span class="o">(</span><span class="n">path</span><span class="o">,</span> <span class="kc">false</span><span class="o">);</span>
+</span><span class='line'><span class="kt">float</span> <span class="n">pathLength</span> <span class="o">=</span> <span class="n">pathMeasure</span><span class="o">.</span><span class="na">getLength</span><span class="o">();</span>
+</span><span class='line'><span class="c1">//特效</span>
+</span><span class='line'><span class="n">DashPathEffect</span> <span class="n">dashPathEffect</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">DashPathEffect</span><span class="o">(</span><span class="k">new</span> <span class="kt">float</span><span class="o">[]{</span><span class="n">pathLength</span><span class="o">,</span> <span class="n">pathLength</span><span class="o">},</span> <span class="mi">0</span><span class="o">);</span>
+</span><span class='line'><span class="n">mPaint</span><span class="o">.</span><span class="na">setPathEffect</span><span class="o">(</span><span class="n">dashPathEffect</span><span class="o">);</span>
+</span><span class='line'><span class="n">canvas</span><span class="o">.</span><span class="na">drawPath</span><span class="o">(</span><span class="n">path</span><span class="o">,</span> <span class="n">mPaint</span><span class="o">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>其中intervals数组画线的长度和空白的长度都是path的长度。</p>
+
+<p>按照前面讲的，这样整个路径画出来，先是实线部分，就把路径填满了，这个路径一下子全画了出来。</p>
+
+<p>稍微修改一下，将phase改为pathLength：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="c1">//特效</span>
+</span><span class='line'><span class="n">DashPathEffect</span> <span class="n">dashPathEffect</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">DashPathEffect</span><span class="o">(</span><span class="k">new</span> <span class="kt">float</span><span class="o">[]{</span><span class="n">pathLength</span><span class="o">,</span> <span class="n">pathLength</span><span class="o">},</span> <span class="n">pathLength</span><span class="o">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>按照前面讲的，虚线整体向起点移动pathLength个像素，这样实线部分完全移出了路径，隐藏起来了，显示的完全是空白的部分（长度也是pathLength）。</p>
+
+<p><strong>So</strong></p>
+
+<p>完全隐藏和完全显示两个状态都有了，剩下的中间状态，通过一个属性动画将phase从pathLength变到0，整个路径就慢慢地显示出来了！！!</p>
+
+<p>至此，便利用PathEffect的虚线效果结合phase的偏移，将路径追踪效果轻松实现了~</p>
+
+<h3>参考资料</h3>
+
+<ul>
+<li><a href="http://www.curious-creature.com/2013/12/21/android-recipe-4-path-tracing/">http://www.curious-creature.com/2013/12/21/android-recipe-4-path-tracing/</a></li>
+<li><a href="https://www.jianshu.com/p/81150d4740a4">https://www.jianshu.com/p/81150d4740a4</a></li>
+<li><a href="http://hencoder.com/ui-1-2/">http://hencoder.com/ui-1-2/</a></li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Andorid启动流程探索]]></title>
@@ -3316,9 +3695,9 @@
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[Touchevent]]></title>
+    <title type="html"><![CDATA[Android事件分发机制]]></title>
     <link href="http://www.monkeyliu.com/blog/2016/06/17/touchevent/"/>
-    <updated>2016-06-17T00:00:00+08:00</updated>
+    <updated>2016-06-17T11:31:09+08:00</updated>
     <id>http://www.monkeyliu.com/blog/2016/06/17/touchevent</id>
     <content type="html"><![CDATA[<p>之前看过几遍Android的事件分发流程，每次都以为看的差不多了，可过了一段时间印象又淡了，说到底还是知识掌握的不扎实，不够系统，只了解了皮毛。所以，本文对Android的事件分发机制进行系统总结，避免遗忘。结合android源码，参考《Android开发艺术探索》一书和相关博文。</p>
 
@@ -4407,9 +4786,9 @@
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[Androidthreadpool]]></title>
+    <title type="html"><![CDATA[线程池的使用总结]]></title>
     <link href="http://www.monkeyliu.com/blog/2016/03/07/androidthreadpool/"/>
-    <updated>2016-03-07T00:00:00+08:00</updated>
+    <updated>2016-03-07T20:08:50+08:00</updated>
     <id>http://www.monkeyliu.com/blog/2016/03/07/androidthreadpool</id>
     <content type="html"><![CDATA[<p>本博文是对Java线程池使用的一篇总结，系统记录下线程池的用法：</p>
 

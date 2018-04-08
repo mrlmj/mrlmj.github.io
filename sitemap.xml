@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 <url>
+<loc>http://www.monkeyliu.com/blog/2018/04/08/path-tracing/</loc>
+<lastmod>2018-04-08T20:10:38+08:00</lastmod>
+</url>
+<url>
 <loc>http://www.monkeyliu.com/blog/2018/03/24/android-boot/</loc>
 <lastmod>2018-03-24T09:48:26+08:00</lastmod>
 </url>
@@ -22,11 +26,11 @@
 </url>
 <url>
 <loc>http://www.monkeyliu.com/blog/2016/06/17/touchevent/</loc>
-<lastmod>2016-06-17T00:00:00+08:00</lastmod>
+<lastmod>2016-06-17T11:31:09+08:00</lastmod>
 </url>
 <url>
 <loc>http://www.monkeyliu.com/blog/2016/03/07/androidthreadpool/</loc>
-<lastmod>2016-03-07T00:00:00+08:00</lastmod>
+<lastmod>2016-03-07T20:08:50+08:00</lastmod>
 </url>
 <url>
 <loc>http://www.monkeyliu.com/blog/about.html</loc>
@@ -39,6 +43,18 @@
 </url>
 <url>
 <loc>http://www.monkeyliu.com/blog/archives/</loc>
+</url>
+<url>
+<loc>http://www.monkeyliu.com/blog/categories/xian-cheng/</loc>
+</url>
+<url>
+<loc>http://www.monkeyliu.com/blog/categories/xian-cheng-chi/</loc>
+</url>
+<url>
+<loc>http://www.monkeyliu.com/blog/categories/touchevent/</loc>
+</url>
+<url>
+<loc>http://www.monkeyliu.com/blog/categories/shi-jian-fen-fa/</loc>
 </url>
 <url>
 <loc>http://www.monkeyliu.com/blog/categories/handler/</loc>
@@ -81,5 +97,11 @@
 </url>
 <url>
 <loc>http://www.monkeyliu.com/blog/categories/qi-dong-liu-cheng/</loc>
+</url>
+<url>
+<loc>http://www.monkeyliu.com/blog/categories/path/</loc>
+</url>
+<url>
+<loc>http://www.monkeyliu.com/blog/categories/dong-hua/</loc>
 </url>
 </urlset>
