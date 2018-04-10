@@ -5,11 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Android事件分发机制 - AndroidDev</title>
+  <title>Android触摸事件分发机制 - AndroidDev</title>
   <meta name="author" content="放开那个猴子">
 
   
-  <meta name="description" content="之前看过几遍Android的事件分发流程，每次都以为看的差不多了，可过了一段时间印象又淡了，说到底还是知识掌握的不扎实，不够系统，只了解了皮毛。所以，本文对Android的事件分发机制进行系统总结，避免遗忘。结合android源码，参考《Android开发艺术探索》一书和相关博文。 基础内容 &hellip;">
+  <meta name="description" content="结合源码剖析一下Android的触摸事件分发机制，加深理解和记忆，将一些模棱两可的点搞清晰。 基础方法 在Android的事件分发过程中涉及到View的三个重要方法: public boolean dispatchTouchEvent(MotionEvent ev) 进行事件的分发。 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -70,7 +70,7 @@
   
   <header>
     
-      <h1 class="entry-title">Android事件分发机制</h1>
+      <h1 class="entry-title">Android触摸事件分发机制</h1>
     
     
       <p class="meta">
@@ -86,14 +86,14 @@
   </header>
 
 
-<div class="entry-content"><p>之前看过几遍Android的事件分发流程，每次都以为看的差不多了，可过了一段时间印象又淡了，说到底还是知识掌握的不扎实，不够系统，只了解了皮毛。所以，本文对Android的事件分发机制进行系统总结，避免遗忘。结合android源码，参考《Android开发艺术探索》一书和相关博文。</p>
+<div class="entry-content"><p>结合源码剖析一下Android的触摸事件分发机制，加深理解和记忆，将一些模棱两可的点搞清晰。</p>
+
+<h3>基础方法</h3>
+
+<p>在Android的事件分发过程中涉及到View的三个重要方法:</p>
 
 <!-- more -->
 
-
-<h3>基础内容</h3>
-
-<p>在Android的事件分发过程中涉及到View的三个重要方法:</p>
 
 <p><strong>public boolean dispatchTouchEvent(MotionEvent ev)</strong></p>
 
@@ -507,9 +507,20 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>可以看出在DOWN的时候，会进入if方法体，调用三大方法之一 <strong>onInterceptTouchEvent</strong> 此方法默认返回false,也就是不拦截事件，intercept = false;</p>
+<p>可以看出在DOWN的时候，会进入if方法体，调用三大方法之一 <strong>onInterceptTouchEvent</strong>， 此方法默认返回false,也就是不拦截事件，intercept = false;</p>
 
-<p>mFirstTouchTarget 非常重要，之后的所有判断几乎都跟这个变量有联系。顾名思义，这个变量代表的是ViewGroup的事件分发目标，是ViewGroup的一个Child。有三种情况会导致mFirstTouchTarget=null（也就是没有事件分发的目标了），一是onInterceptTouchEvent返回了true拦截了DOWN事件；二是此ViewGroup没有子View；三是所有的子View都不消费事件。二和三的处理在41~84行，主要是遍历了能接收到点击事件的子View然后将事件分发过去，在子View分发事件返回了true消费了事件，才将mFirstTouchTarget指向它，其他情况则为null。三种情况下都会导致mFirstTouchTarget不能够被赋值。</p>
+<p>mFirstTouchTarget 非常重要，之后的所有判断几乎都跟这个变量有联系。顾名思义，这个变量代表的是ViewGroup的事件分发目标，是ViewGroup的一个Child。</p>
+
+<p>有三种情况会导致mFirstTouchTarget=null（也就是没有事件分发的目标了）:</p>
+
+<ul>
+<li>onInterceptTouchEvent返回了true拦截了DOWN事件；</li>
+<li>此ViewGroup没有子View；</li>
+<li>所有的子View都不消费事件。</li>
+</ul>
+
+
+<p>二和三的处理在41~84行，主要是遍历了能接收到点击事件的子View然后将事件分发过去，在子View分发事件返回了true消费了事件，才将mFirstTouchTarget指向它，其他情况则为null。三种情况下都会导致mFirstTouchTarget不能够被赋值。</p>
 
 <p>如果满足上述三种情况导致mFirstTouchTarget=null，则对于事件序列中DOWN之后的事件，都会进入else体，intercept=true,拦截事件自己处理。在98~102行自己进行处理。</p>
 
@@ -554,25 +565,26 @@
 
 <p>可以看出如果child==null，则会调用父类的dispatchTouchEvent()方法进行处理，ViewGroup的父类也就是View,从此，分发事件的逻辑进入View中，后面再讲。</p>
 
-<p>这里可以得出结论：</p>
+<h4>总结</h4>
 
-<h4>一：如果一个View决定拦截，那么整个事件序列只能有它来处理，并且它的onInterceptTouchEvent方法不会再调用。</h4>
+<ul>
+<li>如果一个View决定拦截，那么后续整个事件序列只能由它来处理（mFirstTarget==null之后，每次都进入else体），并且它的onInterceptTouchEvent方法不会再调用。</li>
+<li>如果一个View不消耗传递给它的ACTION_DOWN事件，则之后的所有事件都不会再交给它处理，事件会将重新交给父元素去处理（同样是因为父容器的mFirstTarget==null，DOWN之后的事件不会继续往这个View分发）。</li>
+</ul>
 
-<h4>二：如果一个View不消耗传递给它的ACTION_DOWN事件，则之后的所有事件都不会再交给它处理，事件会将重新交给父元素去处理。</h4>
 
-<hr />
+<p>考虑一下两个特殊情况：</p>
 
-<p><img src="/images/articles/touchevent.png" alt="" /></p>
+<ol>
+<li>如果在ViewGroup的onInterceptTouchEvent中对MOVE事件return true进行拦截，会有什么情况?</li>
+</ol>
 
-<p>由此，如果此时在上图的View处点击了一下，则事件的分发过程为:<strong>Activity#dispatchTouchEvent -> ViewGroup#onInterceptTouchEvent -> ViewGroup#dispatchTouchEvent -> &hellip; -> View#dispatchTouchEvent  -> View#onTouchEvent</strong></p>
-
-<p>考虑一下特殊情况：</p>
-
-<p>情况① 如果在ViewGroup的onInterceptTouchEvent中对MOVE事件return true进行拦截，会有什么情况?</p>
 
 <p>按道理来讲，如果ViewGroup中对MOVE事件进行了拦截，那么事件就不应该分发给View了，做一下实验:</p>
 
-<p>这里写了两个自定义的View</p>
+<p>这里写了两个自定义的View：</p>
+
+<p>ViewGroup在第一个move事件时，拦截。</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -719,7 +731,7 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>布局如前图所示：</p>
+<p>布局：</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -748,9 +760,7 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>在ViewGroup中对于MOVE事件进行了拦截，然后打了部分Log。</p>
-
-<p>此时，如果在MyView上点击一下，Log为：</p>
+<p>如果在MyView上点击一下，Log打印：</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -761,7 +771,7 @@
 
 <p>View处理了一个DOWN和一个UP。</p>
 
-<p>如果在MyView上DOWN-MOVE-MOVE-&hellip;-MOVE-UP，Log为：</p>
+<p>如果在MyView上DOWN-MOVE-MOVE-&hellip;-MOVE-UP，Log打印：</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -782,7 +792,7 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>View处理了一个DOWN和一个CANCEL，之后的事件向外传递给父类处理。可以看出，在拦截MOVE事件之后，向View分发了一个CANCEL事件，之后事件便不再分发给View.
+<p>View处理了一个DOWN和一个CANCEL，之后的MOVE事件向外传递给父容器处理，父容器不消费事件继续向上传给Activity处理。所以，在拦截MOVE事件之后，向View分发了一个CANCEL事件，之后事件便不再分发给View.
 这个处理的过程在98~134行,如下。</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
@@ -858,10 +868,14 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>在else遍历了target(target其实是一个链表结构，表示了一系列可以接受事件的view,用于处理多点触摸的，这里对于单点只考虑一层循环)。其中if (alreadyDispatchedToNewTouchTarget &amp;&amp; target == newTouchTarget) 是对于之前的DOWN事件进行处理，直接设置为handled=true;
-重点是15~13行，因为我们之前拦截了MOVE事件，所以15行的cancelChild变量为true,而在dispatchTransformedTouchEvent中，此变量导致一个CANCEL事件的产生，之后21行，会将mFirstTouchTarget置为null.之后接受到的事件便由自己处理，View再接收不到事件序列之后的任何事件，事件给父View处理，证实了结论一。</p>
+<p>if体前面讲过，就是没有找到分发的子View，自己进行处理。</p>
 
-<p>情况②：如果在View的onTouchEvent中对于MOVE事件，return false不进行消费会有什么结果?</p>
+<p>else体中15~20行，因为我们之前拦截了MOVE事件，所以15行的cancelChild变量为true，进而在17行dispatchTransformedTouchEvent方法中，产生CANCEL事件发给目标View，之后23行，会将mFirstTouchTarget置为null。之后接受到的事件便由自己处理，View再接收不到事件序列之后的任何事件，事件给父View处理。</p>
+
+<ol>
+<li>如果在View的onTouchEvent中对于MOVE事件，return false不进行消费会有什么结果?</li>
+</ol>
+
 
 <p>修改MyView.java</p>
 
@@ -940,17 +954,20 @@
 
 <p>很奇妙，View仍然接收到了每个事件，但是对于没有处理的MOVE事件，最后都交给了Activity处理，没有经过ViewGroup。</p>
 
-<p>确实，从ViewGroup#dispatchTouchEvent中，在没有消费MOVE事件的情况下，没有找到将mFirstTouchTarget置为null,然后自己处理MOVE事件的代码。至于，最后将事件交给了Activity处理，我猜是在147~149行，对于!handled情况进行了处理。</p>
+<p>确实，从ViewGroup#dispatchTouchEvent中，在没有消费MOVE事件的情况下，没有找到将mFirstTouchTarget置为null，然后自己处理MOVE事件的代码。所以MOVE事件虽然没有消费，但是仍然会继续分发到目标View上。最终没有View消费事件，在Activity#onTouchEvent中进行了处理。</p>
 
-<p>对此可以得出一个结论：</p>
+<h4>总结</h4>
 
-<h4>三：如果View不消耗除ACTION_DOWN之外的事件，仍然会收到事件序列的其他事件，父类的onTouchEvent不会调用，消失的事件会传给Activity处理（由此可见ACTION_DOWN事件才是主角，return true则一直接收事件，return false则不会再接收到后续事件）。</h4>
+<ul>
+<li><p>如果View不消耗除ACTION_DOWN之外的事件，仍然会收到事件序列的其他事件，父类的onTouchEvent不会调用，消失的事件会传给Activity处理（由此可见ACTION_DOWN事件才是主角，return true则一直接收事件，return false则不会再接收到后续事件）。</p>
 
-<p>4、上述对事件分发进行了一个大概的梳理，最终事件会通过 View#dispatchTouchEvent -> View#onTouchEvent进行处理。</p>
+<p>​</p></li>
+</ul>
 
-<p>View类没有onInterceptTouchEvent方法。</p>
 
-<p>View中事件的处理比较清晰简单，涉及到OnTouchListener和OnClickListener和onTouchEvent的执行顺序问题。</p>
+<p>4、View类中的事件处理逻辑</p>
+
+<p>View中事件的处理比较清晰简单，它没有onInterceptTouchEvent方法，主要涉及到OnTouchListener和OnClickListener和onTouchEvent的执行顺序问题。</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -1005,164 +1022,48 @@
 <span class='line-number'>18</span>
 <span class='line-number'>19</span>
 <span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-<span class='line-number'>49</span>
-<span class='line-number'>50</span>
-<span class='line-number'>51</span>
-<span class='line-number'>52</span>
-<span class='line-number'>53</span>
-<span class='line-number'>54</span>
-<span class='line-number'>55</span>
-<span class='line-number'>56</span>
-<span class='line-number'>57</span>
-<span class='line-number'>58</span>
-<span class='line-number'>59</span>
-<span class='line-number'>60</span>
-<span class='line-number'>61</span>
-<span class='line-number'>62</span>
-<span class='line-number'>63</span>
-<span class='line-number'>64</span>
-<span class='line-number'>65</span>
-<span class='line-number'>66</span>
-<span class='line-number'>67</span>
-<span class='line-number'>68</span>
-<span class='line-number'>69</span>
-<span class='line-number'>70</span>
-<span class='line-number'>71</span>
-<span class='line-number'>72</span>
-<span class='line-number'>73</span>
-<span class='line-number'>74</span>
-<span class='line-number'>75</span>
-<span class='line-number'>76</span>
-<span class='line-number'>77</span>
-<span class='line-number'>78</span>
-<span class='line-number'>79</span>
 </pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">onTouchEvent</span><span class="o">(</span><span class="n">MotionEvent</span> <span class="n">event</span><span class="o">)</span> <span class="o">{</span>
 </span><span class='line'>       <span class="kd">final</span> <span class="kt">float</span> <span class="n">x</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="na">getX</span><span class="o">();</span>
 </span><span class='line'>       <span class="kd">final</span> <span class="kt">float</span> <span class="n">y</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="na">getY</span><span class="o">();</span>
 </span><span class='line'>       <span class="kd">final</span> <span class="kt">int</span> <span class="n">viewFlags</span> <span class="o">=</span> <span class="n">mViewFlags</span><span class="o">;</span>
 </span><span class='line'>       <span class="kd">final</span> <span class="kt">int</span> <span class="n">action</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="na">getAction</span><span class="o">();</span>
 </span><span class='line'>
-</span><span class='line'>       <span class="k">if</span> <span class="o">((</span><span class="n">viewFlags</span> <span class="o">&amp;</span> <span class="n">ENABLED_MASK</span><span class="o">)</span> <span class="o">==</span> <span class="n">DISABLED</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>           <span class="k">if</span> <span class="o">(</span><span class="n">action</span> <span class="o">==</span> <span class="n">MotionEvent</span><span class="o">.</span><span class="na">ACTION_UP</span> <span class="o">&amp;&amp;</span> <span class="o">(</span><span class="n">mPrivateFlags</span> <span class="o">&amp;</span> <span class="n">PFLAG_PRESSED</span><span class="o">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>               <span class="n">setPressed</span><span class="o">(</span><span class="kc">false</span><span class="o">);</span>
-</span><span class='line'>           <span class="o">}</span>
-</span><span class='line'>           <span class="c1">// A disabled view that is clickable still consumes the touch</span>
-</span><span class='line'>           <span class="c1">// events, it just doesn&#39;t respond to them.</span>
-</span><span class='line'>           <span class="k">return</span> <span class="o">(((</span><span class="n">viewFlags</span> <span class="o">&amp;</span> <span class="n">CLICKABLE</span><span class="o">)</span> <span class="o">==</span> <span class="n">CLICKABLE</span>
-</span><span class='line'>                   <span class="o">||</span> <span class="o">(</span><span class="n">viewFlags</span> <span class="o">&amp;</span> <span class="n">LONG_CLICKABLE</span><span class="o">)</span> <span class="o">==</span> <span class="n">LONG_CLICKABLE</span><span class="o">)</span>
-</span><span class='line'>                   <span class="o">||</span> <span class="o">(</span><span class="n">viewFlags</span> <span class="o">&amp;</span> <span class="n">CONTEXT_CLICKABLE</span><span class="o">)</span> <span class="o">==</span> <span class="n">CONTEXT_CLICKABLE</span><span class="o">);</span>
-</span><span class='line'>       <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>       <span class="k">if</span> <span class="o">(</span><span class="n">mTouchDelegate</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>           <span class="k">if</span> <span class="o">(</span><span class="n">mTouchDelegate</span><span class="o">.</span><span class="na">onTouchEvent</span><span class="o">(</span><span class="n">event</span><span class="o">))</span> <span class="o">{</span>
-</span><span class='line'>               <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
-</span><span class='line'>           <span class="o">}</span>
-</span><span class='line'>       <span class="o">}</span>
-</span><span class='line'>
+</span><span class='line'>       <span class="c1">//省略大量代码</span>
 </span><span class='line'>       <span class="k">if</span> <span class="o">(((</span><span class="n">viewFlags</span> <span class="o">&amp;</span> <span class="n">CLICKABLE</span><span class="o">)</span> <span class="o">==</span> <span class="n">CLICKABLE</span> <span class="o">||</span>
 </span><span class='line'>               <span class="o">(</span><span class="n">viewFlags</span> <span class="o">&amp;</span> <span class="n">LONG_CLICKABLE</span><span class="o">)</span> <span class="o">==</span> <span class="n">LONG_CLICKABLE</span><span class="o">)</span> <span class="o">||</span>
 </span><span class='line'>               <span class="o">(</span><span class="n">viewFlags</span> <span class="o">&amp;</span> <span class="n">CONTEXT_CLICKABLE</span><span class="o">)</span> <span class="o">==</span> <span class="n">CONTEXT_CLICKABLE</span><span class="o">)</span> <span class="o">{</span>
 </span><span class='line'>           <span class="k">switch</span> <span class="o">(</span><span class="n">action</span><span class="o">)</span> <span class="o">{</span>
 </span><span class='line'>               <span class="k">case</span> <span class="n">MotionEvent</span><span class="o">.</span><span class="na">ACTION_UP</span><span class="o">:</span>
-</span><span class='line'>                   <span class="kt">boolean</span> <span class="n">prepressed</span> <span class="o">=</span> <span class="o">(</span><span class="n">mPrivateFlags</span> <span class="o">&amp;</span> <span class="n">PFLAG_PREPRESSED</span><span class="o">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="o">;</span>
-</span><span class='line'>                   <span class="k">if</span> <span class="o">((</span><span class="n">mPrivateFlags</span> <span class="o">&amp;</span> <span class="n">PFLAG_PRESSED</span><span class="o">)</span> <span class="o">!=</span> <span class="mi">0</span> <span class="o">||</span> <span class="n">prepressed</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>                       <span class="c1">// take focus if we don&#39;t have it already and we should in</span>
-</span><span class='line'>                       <span class="c1">// touch mode.</span>
-</span><span class='line'>                       <span class="kt">boolean</span> <span class="n">focusTaken</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
-</span><span class='line'>                       <span class="k">if</span> <span class="o">(</span><span class="n">isFocusable</span><span class="o">()</span> <span class="o">&amp;&amp;</span> <span class="n">isFocusableInTouchMode</span><span class="o">()</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="n">isFocused</span><span class="o">())</span> <span class="o">{</span>
-</span><span class='line'>                           <span class="n">focusTaken</span> <span class="o">=</span> <span class="n">requestFocus</span><span class="o">();</span>
-</span><span class='line'>                       <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>                       <span class="k">if</span> <span class="o">(</span><span class="n">prepressed</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>                           <span class="c1">// The button is being released before we actually</span>
-</span><span class='line'>                           <span class="c1">// showed it as pressed.  Make it show the pressed</span>
-</span><span class='line'>                           <span class="c1">// state now (before scheduling the click) to ensure</span>
-</span><span class='line'>                           <span class="c1">// the user sees it.</span>
-</span><span class='line'>                           <span class="n">setPressed</span><span class="o">(</span><span class="kc">true</span><span class="o">,</span> <span class="n">x</span><span class="o">,</span> <span class="n">y</span><span class="o">);</span>
-</span><span class='line'>                      <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>                       <span class="k">if</span> <span class="o">(!</span><span class="n">mHasPerformedLongPress</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="n">mIgnoreNextUpEvent</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>                           <span class="c1">// This is a tap, so remove the longpress check</span>
-</span><span class='line'>                           <span class="n">removeLongPressCallback</span><span class="o">();</span>
-</span><span class='line'>
-</span><span class='line'>                           <span class="c1">// Only perform take click actions if we were in the pressed state</span>
-</span><span class='line'>                           <span class="k">if</span> <span class="o">(!</span><span class="n">focusTaken</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>                               <span class="c1">// Use a Runnable and post this rather than calling</span>
-</span><span class='line'>                               <span class="c1">// performClick directly. This lets other visual state</span>
-</span><span class='line'>                               <span class="c1">// of the view update before click actions start.</span>
-</span><span class='line'>                               <span class="k">if</span> <span class="o">(</span><span class="n">mPerformClick</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>                                   <span class="n">mPerformClick</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">PerformClick</span><span class="o">();</span>
-</span><span class='line'>                               <span class="o">}</span>
-</span><span class='line'>                               <span class="k">if</span> <span class="o">(!</span><span class="n">post</span><span class="o">(</span><span class="n">mPerformClick</span><span class="o">))</span> <span class="o">{</span>
-</span><span class='line'>                                   <span class="n">performClick</span><span class="o">();</span>
-</span><span class='line'>                               <span class="o">}</span>
-</span><span class='line'>                           <span class="o">}</span>
-</span><span class='line'>                       <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>                       <span class="k">if</span> <span class="o">(</span><span class="n">mUnsetPressedState</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>                           <span class="n">mUnsetPressedState</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">UnsetPressedState</span><span class="o">();</span>
-</span><span class='line'>                       <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>                       <span class="k">if</span> <span class="o">(</span><span class="n">prepressed</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>                           <span class="n">postDelayed</span><span class="o">(</span><span class="n">mUnsetPressedState</span><span class="o">,</span>
-</span><span class='line'>                                   <span class="n">ViewConfiguration</span><span class="o">.</span><span class="na">getPressedStateDuration</span><span class="o">());</span>
-</span><span class='line'>                       <span class="o">}</span> <span class="k">else</span> <span class="nf">if</span> <span class="o">(!</span><span class="n">post</span><span class="o">(</span><span class="n">mUnsetPressedState</span><span class="o">))</span> <span class="o">{</span>
-</span><span class='line'>                           <span class="c1">// If the post failed, unpress right now</span>
-</span><span class='line'>                           <span class="n">mUnsetPressedState</span><span class="o">.</span><span class="na">run</span><span class="o">();</span>
-</span><span class='line'>                       <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>                       <span class="n">removeTapCallback</span><span class="o">();</span>
-</span><span class='line'>                   <span class="o">}</span>
-</span><span class='line'>                   <span class="n">mIgnoreNextUpEvent</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
-</span><span class='line'>                   <span class="k">break</span><span class="o">;</span>
+</span><span class='line'>                   <span class="k">if</span> <span class="o">(</span><span class="n">mPerformClick</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                       <span class="n">mPerformClick</span> <span class="o">=</span> <span class="k">new</span> <span class="nf">PerformClick</span><span class="o">();</span>
+</span><span class='line'>                    <span class="o">}</span>
+</span><span class='line'>                    <span class="k">if</span> <span class="o">(!</span><span class="n">post</span><span class="o">(</span><span class="n">mPerformClick</span><span class="o">))</span> <span class="o">{</span>
+</span><span class='line'>                          <span class="n">performClick</span><span class="o">();</span>
+</span><span class='line'>                     <span class="o">}</span>
+</span><span class='line'>           <span class="o">}</span>
+</span><span class='line'>       <span class="o">}</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>上述为View#onTouchEvent源码，在ACTION_UP时，performClick调用了OnClickListener#onClick方法，由此可得出结论：</p>
+<p>上述为View#onTouchEvent源码，在ACTION_UP时，performClick调用了OnClickListener#onClick方法。</p>
 
-<h4>四、事件的处理顺序为:onTouch -> onTouchEvent -> onClick</h4>
+<h4>所以</h4>
 
-<h4>五、事件的消费跟View的状态无关，即使View状态为DISABLED,只要满足CLICKABLE、LONG_CLICKABLE、CONTEXT_CLICKABLE中的一个就可以消费事件。</h4>
+<ul>
+<li>事件的处理顺序为:TouchListener#onTouch -> onTouchEvent -> onClick</li>
+<li>事件的消费跟View的状态无关，即使View状态为DISABLED,只要满足CLICKABLE、LONG_CLICKABLE、CONTEXT_CLICKABLE中的一个就可以消费事件。</li>
+</ul>
 
-<h2>总结</h2>
 
-<p>对于整个事件分发流程，抛开让人头脑混乱的代码不看，总结为：</p>
+<h3>最后</h3>
 
-<p>事件分发是一个从外向内的过程。</p>
+<p>Andorid整个View树的事件分发，属于设计模式中的<code>组合模式</code>（组合模式具体内容自行搜索了解），对于一个控件，无论它是View还是ViewGroup都可以无差别地进行处理。我们针对View类进行事件分发即可。</p>
 
-<p>如果一个View拦截了某个事件，则整个事件序列的后续事件都由此View进行处理。</p>
+<p>对于整个事件分发流程，抛开让人头脑混乱的代码不看，我觉得可以总结为：</p>
 
-<p>如果一个View不消费ACTION_DOWN事件，则事件序列的后续事件都不会再传递给该View。</p>
+<p>事件分发机制就是要找到一个View，让它处理一个事件序列。我们可以通过一系列手段来控制哪个View来处理这一个事件序列（通过拦截、不消费）。</p>
 
-<p>参考链接:</p>
+<h3>参考资料:</h3>
 
 <p><a href="http://blog.csdn.net/lfdfhl/article/details/51603088">谷哥的小弟博文</a></p>
 

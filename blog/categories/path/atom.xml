@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Path | AndroidDev]]></title>
   <link href="http://www.monkeyliu.com/blog/categories/path/atom.xml" rel="self"/>
   <link href="http://www.monkeyliu.com/"/>
-  <updated>2018-04-08T22:14:01+08:00</updated>
+  <updated>2018-04-10T17:08:06+08:00</updated>
   <id>http://www.monkeyliu.com/</id>
   <author>
     <name><![CDATA[放开那个猴子]]></name>
@@ -18,11 +18,9 @@
     <link href="http://www.monkeyliu.com/blog/2018/04/08/path-tracing/"/>
     <updated>2018-04-08T20:10:38+08:00</updated>
     <id>http://www.monkeyliu.com/blog/2018/04/08/path-tracing</id>
-    <content type="html"><![CDATA[<p>UI开发中有时会遇到这样的效果</p>
+    <content type="html"><![CDATA[<p>UI开发中有时会遇到这样的效果（重点看对号√的动画实现）</p>
 
 <p><img src="/images/articles/path_tracing.gif" alt="path tracing" /></p>
-
-<p>（重点看对号√的动画实现）</p>
 
 <p>这篇文章就总结下，如何实现这样的一个UI动效。</p>
 
