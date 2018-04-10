@@ -6,11 +6,9 @@ comments: true
 categories: UI Path 动画
 ---
 
-UI开发中有时会遇到这样的效果
+UI开发中有时会遇到这样的效果（重点看对号√的动画实现）
 
 ![path tracing](/images/articles/path_tracing.gif)
-
-（重点看对号√的动画实现）
 
 这篇文章就总结下，如何实现这样的一个UI动效。
 
