@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Keyevent | AndroidDev]]></title>
   <link href="http://www.monkeyliu.com/blog/categories/keyevent/atom.xml" rel="self"/>
   <link href="http://www.monkeyliu.com/"/>
-  <updated>2018-04-10T17:08:06+08:00</updated>
+  <updated>2018-04-13T08:33:37+08:00</updated>
   <id>http://www.monkeyliu.com/</id>
   <author>
     <name><![CDATA[放开那个猴子]]></name>
@@ -22,7 +22,9 @@
 
 <h3>1.事件分发的根源</h3>
 
-<p>首先，来回顾一下触摸事件分发的大致流程:</p>
+<p>1.1 首先，来回顾一下触摸事件分发的大致流程:</p>
+
+<p>[@ViewGroup]</p>
 
 <pre><code class="java">public boolean dispatchTouchEvent(MotionEvent ev){
   boolean consume = false;
@@ -35,16 +37,22 @@
 }
 </code></pre>
 
+<p>Android触摸事件分发的具体流程可以看我的这边文章 -> <a href="http://www.monkeyliu.com/blog/2016/06/17/touchevent/">Android触摸事件分发机制</a></p>
+
 <p>那么最开始的<code>dispatchTouchEvent</code>是哪里调用的，事件的根源是从哪里传上来的？</p>
 
 <!-- more -->
 
+
+<p>下图展示了Framework里是怎么将事件分发到View树中的：</p>
 
 <p><img src="/images/articles/focus_root.png" alt="key_route" /></p>
 
 <p>其中"一系列的InputStage"用到了责任链模式对事件依次进行处理。</p>
 
 <p>InputStage责任链的创建：</p>
+
+<p>[@ViewRootImpl#setView]</p>
 
 <pre><code class="java">mSyntheticInputStage = new SyntheticInputStage();
 InputStage viewPostImeStage = new ViewPostImeInputStage(mSyntheticInputStage);
@@ -357,7 +365,7 @@ public boolean dispatchKeyEvent(KeyEvent event) {
 
 <p>可以看出View会默认消费<strong>确认键</strong>，其他类型的按键一律不消费。</p>
 
-<p>总结：</p>
+<h4>总结：</h4>
 
 <p>默认情况下，KeyEvent事件从DecorView一层层传递到focused view。对于确认键，则触发click，消费掉，结束。对于其他按键不处理，最终返回false，进行下一步的处理。</p>
 

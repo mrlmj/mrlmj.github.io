@@ -9,7 +9,7 @@
   <meta name="author" content="放开那个猴子">
 
   
-  <meta name="description" content="本文总结一下Android中按键事件的分发机制。Android的按键事件分发跟触摸事件分发类似，甚至比触摸事件分发更加简单！ 1.事件分发的根源 首先，来回顾一下触摸事件分发的大致流程: 1
+  <meta name="description" content="本文总结一下Android中按键事件的分发机制。Android的按键事件分发跟触摸事件分发类似，甚至比触摸事件分发更加简单！ 1.事件分发的根源 1.1 首先，来回顾一下触摸事件分发的大致流程: [@ViewGroup] 1
 2
 3
 4
@@ -18,7 +18,7 @@
 7
 8
 9
-public boolean dispatchTouchEvent( &hellip;">
+public boolean &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -99,7 +99,9 @@ public boolean dispatchTouchEvent( &hellip;">
 
 <h3>1.事件分发的根源</h3>
 
-<p>首先，来回顾一下触摸事件分发的大致流程:</p>
+<p>1.1 首先，来回顾一下触摸事件分发的大致流程:</p>
+
+<p>[@ViewGroup]</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -122,16 +124,22 @@ public boolean dispatchTouchEvent( &hellip;">
 </span></code></pre></td></tr></table></div></figure>
 
 
+<p>Android触摸事件分发的具体流程可以看我的这边文章 -> <a href="http://www.monkeyliu.com/blog/2016/06/17/touchevent/">Android触摸事件分发机制</a></p>
+
 <p>那么最开始的<code>dispatchTouchEvent</code>是哪里调用的，事件的根源是从哪里传上来的？</p>
 
 <!-- more -->
 
+
+<p>下图展示了Framework里是怎么将事件分发到View树中的：</p>
 
 <p><img src="/images/articles/focus_root.png" alt="key_route" /></p>
 
 <p>其中"一系列的InputStage"用到了责任链模式对事件依次进行处理。</p>
 
 <p>InputStage责任链的创建：</p>
+
+<p>[@ViewRootImpl#setView]</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -646,7 +654,7 @@ public boolean dispatchTouchEvent( &hellip;">
 
 <p>可以看出View会默认消费<strong>确认键</strong>，其他类型的按键一律不消费。</p>
 
-<p>总结：</p>
+<h4>总结：</h4>
 
 <p>默认情况下，KeyEvent事件从DecorView一层层传递到focused view。对于确认键，则触发click，消费掉，结束。对于其他按键不处理，最终返回false，进行下一步的处理。</p>
 
