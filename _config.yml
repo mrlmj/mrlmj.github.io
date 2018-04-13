@@ -99,3 +99,7 @@ google_analytics_tracking_id:
 
 # Facebook Like
 facebook_like: false
+
+# Gitment Comments
+gitment_comments: true
+gitment_owner: mrlmj
