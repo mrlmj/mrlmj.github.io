@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Keyevent | AndroidDev]]></title>
   <link href="http://www.monkeyliu.com/blog/categories/keyevent/atom.xml" rel="self"/>
   <link href="http://www.monkeyliu.com/"/>
-  <updated>2018-04-13T08:33:37+08:00</updated>
+  <updated>2018-04-13T09:56:46+08:00</updated>
   <id>http://www.monkeyliu.com/</id>
   <author>
     <name><![CDATA[放开那个猴子]]></name>
@@ -22,7 +22,7 @@
 
 <h3>1.事件分发的根源</h3>
 
-<p>1.1 首先，来回顾一下触摸事件分发的大致流程:</p>
+<p>首先，来回顾一下触摸事件分发的大致流程:</p>
 
 <p>[@ViewGroup]</p>
 
@@ -39,7 +39,7 @@
 
 <p>Android触摸事件分发的具体流程可以看我的这边文章 -> <a href="http://www.monkeyliu.com/blog/2016/06/17/touchevent/">Android触摸事件分发机制</a></p>
 
-<p>那么最开始的<code>dispatchTouchEvent</code>是哪里调用的，事件的根源是从哪里传上来的？</p>
+<p>1.1 那么最开始的<code>dispatchTouchEvent</code>是哪里调用的，事件的根源是从哪里传上来的？</p>
 
 <!-- more -->
 

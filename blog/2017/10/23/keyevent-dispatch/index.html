@@ -9,7 +9,7 @@
   <meta name="author" content="放开那个猴子">
 
   
-  <meta name="description" content="本文总结一下Android中按键事件的分发机制。Android的按键事件分发跟触摸事件分发类似，甚至比触摸事件分发更加简单！ 1.事件分发的根源 1.1 首先，来回顾一下触摸事件分发的大致流程: [@ViewGroup] 1
+  <meta name="description" content="本文总结一下Android中按键事件的分发机制。Android的按键事件分发跟触摸事件分发类似，甚至比触摸事件分发更加简单！ 1.事件分发的根源 首先，来回顾一下触摸事件分发的大致流程: [@ViewGroup] 1
 2
 3
 4
@@ -99,7 +99,7 @@ public boolean &hellip;">
 
 <h3>1.事件分发的根源</h3>
 
-<p>1.1 首先，来回顾一下触摸事件分发的大致流程:</p>
+<p>首先，来回顾一下触摸事件分发的大致流程:</p>
 
 <p>[@ViewGroup]</p>
 
@@ -126,7 +126,7 @@ public boolean &hellip;">
 
 <p>Android触摸事件分发的具体流程可以看我的这边文章 -> <a href="http://www.monkeyliu.com/blog/2016/06/17/touchevent/">Android触摸事件分发机制</a></p>
 
-<p>那么最开始的<code>dispatchTouchEvent</code>是哪里调用的，事件的根源是从哪里传上来的？</p>
+<p>1.1 那么最开始的<code>dispatchTouchEvent</code>是哪里调用的，事件的根源是从哪里传上来的？</p>
 
 <!-- more -->
 
@@ -1412,6 +1412,28 @@ public boolean &hellip;">
     </p>
   </footer>
 </article>
+
+
+  <section>
+    <h1>发表评论</h1>
+    <div id="comments" aria-live="polite"><!-- Gitment Comment BEGIN -->
+<div id="container"></div>
+<link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+<script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+<script>
+var gitment = new Gitment({
+  owner: 'mrlmj',
+  repo: 'mrlmj.github.io',
+  oauth: {
+    client_id: 'ce8b4d9bd5317fb89b7d',
+    client_secret: '388e3ab25cc4ade3afd01006b758086bbdf3e47a',
+  },
+})
+gitment.render('container')
+</script>
+<!-- Gitment Comment END -->
+</div>
+  </section>
 
 </div>
 
