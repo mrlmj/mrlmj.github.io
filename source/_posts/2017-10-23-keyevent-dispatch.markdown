@@ -12,7 +12,7 @@ categories: Android KeyEvent 按键事件分发
 
 ### 1.事件分发的根源
 
-1.1 首先，来回顾一下触摸事件分发的大致流程:
+首先，来回顾一下触摸事件分发的大致流程:
 
 [@ViewGroup]
 
@@ -30,7 +30,7 @@ public boolean dispatchTouchEvent(MotionEvent ev){
 
 Android触摸事件分发的具体流程可以看我的这边文章 -> [Android触摸事件分发机制](http://www.monkeyliu.com/blog/2016/06/17/touchevent/)
 
-那么最开始的`dispatchTouchEvent`是哪里调用的，事件的根源是从哪里传上来的？
+1.1 那么最开始的`dispatchTouchEvent`是哪里调用的，事件的根源是从哪里传上来的？
 
 <!-- more -->
 
