@@ -12,7 +12,9 @@ categories: Android KeyEvent 按键事件分发
 
 ### 1.事件分发的根源
 
-首先，来回顾一下触摸事件分发的大致流程:
+1.1 首先，来回顾一下触摸事件分发的大致流程:
+
+[@ViewGroup]
 
 ```java
 public boolean dispatchTouchEvent(MotionEvent ev){
@@ -26,9 +28,13 @@ public boolean dispatchTouchEvent(MotionEvent ev){
 }
 ```
 
+Android触摸事件分发的具体流程可以看我的这边文章 -> [Android触摸事件分发机制](http://www.monkeyliu.com/blog/2016/06/17/touchevent/)
+
 那么最开始的`dispatchTouchEvent`是哪里调用的，事件的根源是从哪里传上来的？
 
 <!-- more -->
+
+下图展示了Framework里是怎么将事件分发到View树中的：
 
 ![key_route](/images/articles/focus_root.png)
 
@@ -37,6 +43,8 @@ public boolean dispatchTouchEvent(MotionEvent ev){
 其中"一系列的InputStage"用到了责任链模式对事件依次进行处理。
 
 InputStage责任链的创建：
+
+[@ViewRootImpl#setView]
 
 ```java
 mSyntheticInputStage = new SyntheticInputStage();
@@ -179,8 +187,6 @@ private int processKeyEvent(QueuedInputEvent q) {
 下面就分两块来详解这两个过程中的具体细节。
 
 ### 2.按键事件分发的流程
-
-
 
 上面的第一步调用了`mView.dispatchKeyEvent(event)`来开始事件分发，其中mView是整个View树的最根布局，也就是DecorView。所以进入DecorView的源码看一下：
 
@@ -376,7 +382,7 @@ public boolean onKeyUp(int keyCode, KeyEvent event) {
 
 
 
-总结：
+####总结：
 
 默认情况下，KeyEvent事件从DecorView一层层传递到focused view。对于确认键，则触发click，消费掉，结束。对于其他按键不处理，最终返回false，进行下一步的处理。
 
