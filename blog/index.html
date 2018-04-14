@@ -197,11 +197,11 @@
   </header>
 
 
-  <div class="entry-content"><p>本文总结一下Android中按键事件的分发机制。Android的按键事件分发跟触摸事件分发类似，甚至比触摸事件分发更加简单！</p>
+  <div class="entry-content"><p>本文总结一下Android中按键事件的分发机制。按键事件分发跟触摸事件分发类似，甚至比触摸事件分发更加简单！Android触摸事件分发的具体流程可以看我的这篇文章 -> <a href="http://www.monkeyliu.com/blog/2016/06/17/touchevent/">Android触摸事件分发机制</a></p>
 
 <h3>1.事件分发的根源</h3>
 
-<p>首先，来回顾一下触摸事件分发的大致流程:</p>
+<p>首先，回顾一下触摸事件分发的大致流程:</p>
 
 <p>[@ViewGroup]</p>
 
@@ -226,9 +226,7 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Android触摸事件分发的具体流程可以看我的这边文章 -> <a href="http://www.monkeyliu.com/blog/2016/06/17/touchevent/">Android触摸事件分发机制</a></p>
 
-<p>1.1 那么最开始的<code>dispatchTouchEvent</code>是哪里调用的，事件的根源是从哪里传上来的？</p>
 
 </div>
   

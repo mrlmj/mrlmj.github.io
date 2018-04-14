@@ -9,16 +9,9 @@
   <meta name="author" content="放开那个猴子">
 
   
-  <meta name="description" content="本文总结一下Android中按键事件的分发机制。Android的按键事件分发跟触摸事件分发类似，甚至比触摸事件分发更加简单！ 1.事件分发的根源 首先，来回顾一下触摸事件分发的大致流程: [@ViewGroup] 1
+  <meta name="description" content="本文总结一下Android中按键事件的分发机制。按键事件分发跟触摸事件分发类似，甚至比触摸事件分发更加简单！Android触摸事件分发的具体流程可以看我的这篇文章 -> Android触摸事件分发机制 1.事件分发的根源 首先，回顾一下触摸事件分发的大致流程: [@ViewGroup] 1
 2
-3
-4
-5
-6
-7
-8
-9
-public boolean &hellip;">
+3 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -95,11 +88,11 @@ public boolean &hellip;">
   </header>
 
 
-<div class="entry-content"><p>本文总结一下Android中按键事件的分发机制。Android的按键事件分发跟触摸事件分发类似，甚至比触摸事件分发更加简单！</p>
+<div class="entry-content"><p>本文总结一下Android中按键事件的分发机制。按键事件分发跟触摸事件分发类似，甚至比触摸事件分发更加简单！Android触摸事件分发的具体流程可以看我的这篇文章 -> <a href="http://www.monkeyliu.com/blog/2016/06/17/touchevent/">Android触摸事件分发机制</a></p>
 
 <h3>1.事件分发的根源</h3>
 
-<p>首先，来回顾一下触摸事件分发的大致流程:</p>
+<p>首先，回顾一下触摸事件分发的大致流程:</p>
 
 <p>[@ViewGroup]</p>
 
@@ -124,20 +117,20 @@ public boolean &hellip;">
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>Android触摸事件分发的具体流程可以看我的这边文章 -> <a href="http://www.monkeyliu.com/blog/2016/06/17/touchevent/">Android触摸事件分发机制</a></p>
 
-<p>1.1 那么最开始的<code>dispatchTouchEvent</code>是哪里调用的，事件的根源是从哪里传上来的？</p>
 
 <!-- more -->
 
 
-<p>下图展示了Framework里是怎么将事件分发到View树中的：</p>
+<p>那么最开始的<code>dispatchTouchEvent</code>是哪里调用的，事件的根源是从哪里传上来的？</p>
+
+<p>下图展示了Framework中事件的根源：</p>
 
 <p><img src="/images/articles/focus_root.png" alt="key_route" /></p>
 
 <p>其中"一系列的InputStage"用到了责任链模式对事件依次进行处理。</p>
 
-<p>InputStage责任链的创建：</p>
+<p>InputStage责任链的创建在ViewRootImpl中：</p>
 
 <p>[@ViewRootImpl#setView]</p>
 
@@ -170,7 +163,7 @@ public boolean &hellip;">
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>最终可以在ViewPostImeInputStage中看到对事件的具体处理：</p>
+<p>主要是ViewPostImeInputStage中对事件进行处理：</p>
 
 <p>[@ViewPostImeInputStage]</p>
 
@@ -213,7 +206,7 @@ public boolean &hellip;">
 
 <p>这里根据InputEvent的类型进行不同的处理，如果是<code>KeyEvent</code>，进入<code>processKeyEvent</code>流程；否则如果是<code>MotionEvent</code>，根据具体的事件源来进入不同的流程。其中，触摸事件的分发就是进入到<code>processPointerEvent</code>中处理，进去再走几步就到了我们熟悉的<code>dispatchTouchEvent</code>。</p>
 
-<p>1.2 继续跟进<code>processKeyEvent</code>:</p>
+<p>我们继续跟进<code>processKeyEvent</code>:</p>
 
 <p>[@ViewPostImeInputStage]</p>
 
