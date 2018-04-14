@@ -8,11 +8,11 @@ categories: Android KeyEvent 按键事件分发
 
 
 
-本文总结一下Android中按键事件的分发机制。Android的按键事件分发跟触摸事件分发类似，甚至比触摸事件分发更加简单！
+本文总结一下Android中按键事件的分发机制。按键事件分发跟触摸事件分发类似，甚至比触摸事件分发更加简单！Android触摸事件分发的具体流程可以看我的这篇文章 -> [Android触摸事件分发机制](http://www.monkeyliu.com/blog/2016/06/17/touchevent/)
 
 ### 1.事件分发的根源
 
-首先，来回顾一下触摸事件分发的大致流程:
+首先，回顾一下触摸事件分发的大致流程:
 
 [@ViewGroup]
 
@@ -28,13 +28,11 @@ public boolean dispatchTouchEvent(MotionEvent ev){
 }
 ```
 
-Android触摸事件分发的具体流程可以看我的这边文章 -> [Android触摸事件分发机制](http://www.monkeyliu.com/blog/2016/06/17/touchevent/)
-
-1.1 那么最开始的`dispatchTouchEvent`是哪里调用的，事件的根源是从哪里传上来的？
-
 <!-- more -->
 
-下图展示了Framework里是怎么将事件分发到View树中的：
+那么最开始的`dispatchTouchEvent`是哪里调用的，事件的根源是从哪里传上来的？
+
+下图展示了Framework中事件的根源：
 
 ![key_route](/images/articles/focus_root.png)
 
@@ -42,7 +40,7 @@ Android触摸事件分发的具体流程可以看我的这边文章 -> [Android�
 
 其中"一系列的InputStage"用到了责任链模式对事件依次进行处理。
 
-InputStage责任链的创建：
+InputStage责任链的创建在ViewRootImpl中：
 
 [@ViewRootImpl#setView]
 
@@ -62,9 +60,7 @@ mFirstInputStage = nativePreImeStage;
 mFirstPostImeInputStage = earlyPostImeStage;
 ```
 
-最终可以在ViewPostImeInputStage中看到对事件的具体处理：
-
-
+主要是ViewPostImeInputStage中对事件进行处理：
 
 [@ViewPostImeInputStage]
 
@@ -92,7 +88,7 @@ protected int onProcess(QueuedInputEvent q) {
 
 
 
-1.2 继续跟进`processKeyEvent`:
+我们继续跟进`processKeyEvent`:
 
 [@ViewPostImeInputStage]
 
